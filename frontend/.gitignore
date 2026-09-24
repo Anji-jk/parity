@@ -5,6 +5,8 @@ node_modules/
 
 # Expo
 .expo/
+.claude/
+.vscode/
 dist/
 web-build/
 expo-env.d.ts
@@ -17,6 +19,9 @@ expo-env.d.ts
 *.p12
 *.key
 *.mobileprovision
+
+CLAUDE.md 
+AGENTS.md 
 
 # Metro
 .metro-health-check*
