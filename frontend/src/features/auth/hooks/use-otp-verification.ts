@@ -38,7 +38,7 @@ export function useOtpVerification({ requestId, expiresInSec, resendInSec }: Par
     try {
       const res = await authApi.verifyOtp({ requestId, otp });
       await tokenStorage.save({ accessToken: res.accessToken, refreshToken: res.refreshToken });
-      router.replace(routes.home);
+      router.replace(routes.roleSelection);
     } catch (e) {
       const err = toApiError(e);
       switch (err.code) {
