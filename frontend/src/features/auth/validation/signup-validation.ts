@@ -2,7 +2,7 @@ import { getCountry } from '../constants/countries';
 import type { SignupErrors, SignupField, SignupValues } from '../types/auth-types';
 import { digitsOnly } from '../utils/phone';
 
-export const FIELD_ORDER: SignupField[] = ['firstName', 'lastName', 'email', 'phone'];
+export const FIELD_ORDER: SignupField[] = ['firstName', 'lastName', 'email', 'phone', 'password'];
 
 const NAME_BAD_CHARS = /[\d!@#$%^&*()_+=[\]{};:"\\|,<>/?~`]/;
 const EMAIL_PATTERN = /^[^\s@]+@[^\s@]+\.[^\s@]{2,}$/;
@@ -33,12 +33,19 @@ function validatePhone(iso: string, raw: string): string | undefined {
   return undefined;
 }
 
+function validatePassword(raw: string): string | undefined {
+  if (!raw) return 'Password is required';
+  if (raw.length < 8) return 'Password must be at least 8 characters';
+  return undefined;
+}
+
 export function validateSignup(v: SignupValues): SignupErrors {
   return {
     firstName: validateName('First name', v.firstName),
     lastName: validateName('Last name', v.lastName),
     email: validateEmail(v.email),
     phone: validatePhone(v.countryIso, v.phone),
+    password: validatePassword(v.password),
   };
 }
 

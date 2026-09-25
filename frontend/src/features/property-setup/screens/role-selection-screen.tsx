@@ -22,8 +22,8 @@ export function RoleSelectionScreen() {
           <AppText variant="subtitle" color={colors.textSecondary} style={styles.center}>Tell us how you’ll be using Parity.</AppText>
         </View>
         <View style={styles.cards}>
-          <RoleCard icon={{ family: 'ionicons', name: 'business-outline' }} title="Property Owner" description="Manage properties, track cleanliness, and oversee teams" onPress={() => router.push(routes.addProperty)} />
-          <RoleCard icon={{ family: 'ionicons', name: 'person-outline' }} title="Worker" description="Join a property and capture room photos" onPress={() => router.push(routes.joinProperty)} />
+          <RoleCard icon={{ family: 'ionicons', name: 'business-outline' }} title="Property Owner" description="Manage properties, track cleanliness, and oversee teams" onPress={() => router.push(routes.signup)} />
+          <RoleCard icon={{ family: 'ionicons', name: 'person-outline' }} title="Worker" description="Join a property and capture room photos" onPress={() => router.push(routes.signup)} />
         </View>
       </View>
       <SetupFooter />

@@ -3,12 +3,11 @@ import { useMemo, useRef, useState } from 'react';
 
 import { routes } from '@/constants/routes';
 import { toApiError } from '@/services/http/api-error';
+import { tokenStorage } from '@/services/storage/token-storage';
 import { authApi } from '../api/auth-api';
-import { DEFAULT_COUNTRY, getCountry } from '../constants/countries';
 import type { LoginValues } from '../types/auth-types';
-import { digitsOnly, sanitizePhone, toE164 } from '../utils/phone';
 
-const INITIAL: LoginValues = { countryIso: DEFAULT_COUNTRY.iso, phone: '' };
+const INITIAL: LoginValues = { login_id: '', password: '' };
 
 export function useLoginForm() {
   const router = useRouter();
@@ -17,26 +16,20 @@ export function useLoginForm() {
   const [formError, setFormError] = useState<string>();
   const [submitting, setSubmitting] = useState(false);
   const inFlight = useRef(false);
-  const country = getCountry(values.countryIso);
-
   const error = useMemo(() => {
     if (!touched) return undefined;
-    if (!digitsOnly(values.phone)) return 'Phone number is required';
-    if (!country.pattern.test(digitsOnly(values.phone))) return `Enter a valid ${country.maxDigits}-digit mobile number`;
+    if (!values.login_id.trim()) return 'Email or phone number is required';
+    if (!values.password) return 'Password is required';
     return undefined;
-  }, [country, touched, values.phone]);
+  }, [touched, values.login_id, values.password]);
 
-  const setPhone = (phone: string) => {
-    setValues((previous) => ({ ...previous, phone: sanitizePhone(phone, country) }));
+  const setLoginId = (loginId: string) => {
+    setValues((previous) => ({ ...previous, login_id: loginId }));
     setFormError(undefined);
   };
 
-  const setCountry = (countryIso: string) => {
-    setValues((previous) => ({
-      ...previous,
-      countryIso,
-      phone: sanitizePhone(previous.phone, getCountry(countryIso)),
-    }));
+  const setPassword = (password: string) => {
+    setValues((previous) => ({ ...previous, password }));
     setFormError(undefined);
   };
 
@@ -49,20 +42,13 @@ export function useLoginForm() {
     setSubmitting(true);
     setFormError(undefined);
     try {
-      const response = await authApi.login({ phone: toE164(country, values.phone) });
-      router.push({
-        pathname: routes.verifyOtp,
-        params: {
-          requestId: response.requestId,
-          phone: toE164(country, values.phone),
-          expiresInSec: String(response.expiresInSec),
-          resendInSec: String(response.resendInSec),
-        },
-      });
+      const response = await authApi.login({ login_id: values.login_id.trim(), password: values.password });
+      await tokenStorage.save(response);
+      router.replace(routes.home);
     } catch (caught) {
       const apiError = toApiError(caught);
       if (apiError.code === 'ACCOUNT_NOT_FOUND') {
-        router.push({ pathname: routes.noAccount, params: { phone: toE164(country, values.phone) } });
+        router.push({ pathname: routes.noAccount });
       } else {
         setFormError(apiError.message);
       }
@@ -72,5 +58,5 @@ export function useLoginForm() {
     }
   };
 
-  return { values, error, formError, submitting, setPhone, setCountry, submit };
+  return { values, error, formError, submitting, setLoginId, setPassword, submit };
 }

@@ -10,7 +10,6 @@ import { useKeyboardVisible } from '@/hooks/use-keyboard-visible';
 import { colors, spacing } from '@/theme';
 import { BrandLogo } from '../../onboarding/components/brand-logo';
 import { AuthTitle } from '../components/auth-title';
-import { CountryCodePicker } from '../components/country-code-picker';
 import { LoginFooter } from '../components/login-footer';
 import { useLoginForm } from '../hooks/use-login-form';
 
@@ -18,7 +17,8 @@ export function LoginScreen() {
   const router = useRouter();
   const insets = useSafeAreaInsets();
   const keyboardVisible = useKeyboardVisible();
-  const phoneRef = useRef<TextInput>(null);
+  const identifierRef = useRef<TextInput>(null);
+  const passwordRef = useRef<TextInput>(null);
   const form = useLoginForm();
 
   return (
@@ -33,22 +33,36 @@ export function LoginScreen() {
 
           <View style={styles.logo}><BrandLogo/></View>
           <View style={styles.title}>
-            <AuthTitle align="center" title="Welcome Back" titleColor={colors.primary} subtitle="Enter your phone number to continue with Parity." />
+            <AuthTitle align="center" title="Welcome Back" titleColor={colors.primary} subtitle="Log in with your email or phone number." />
           </View>
 
           <View style={styles.form}>
             <TextField
-              ref={phoneRef}
-              label="Phone Number"
-              icon={{ family: 'ionicons', name: 'call-outline' }}
-              prefix={<CountryCodePicker value={form.values.countryIso} onChange={form.setCountry} />}
-              value={form.values.phone}
-              onChangeText={form.setPhone}
+              ref={identifierRef}
+              label="Email or Phone Number"
+              icon={{ family: 'ionicons', name: 'person-outline' }}
+              value={form.values.login_id}
+              onChangeText={form.setLoginId}
               onBlur={() => undefined}
-              error={form.error}
-              keyboardType="number-pad"
-              autoComplete="tel"
-              textContentType="telephoneNumber"
+              error={form.error && !form.values.login_id.trim() ? form.error : undefined}
+              autoCapitalize="none"
+              autoCorrect={false}
+              autoComplete="username"
+              textContentType="username"
+              returnKeyType="next"
+              onSubmitEditing={() => passwordRef.current?.focus()}
+            />
+            <TextField
+              ref={passwordRef}
+              label="Password"
+              icon={{ family: 'ionicons', name: 'lock-closed-outline' }}
+              value={form.values.password}
+              onChangeText={form.setPassword}
+              onBlur={() => undefined}
+              error={form.error && form.values.login_id.trim() && !form.values.password ? form.error : undefined}
+              secureTextEntry
+              autoComplete="password"
+              textContentType="password"
               returnKeyType="done"
               onSubmitEditing={form.submit}
             />

@@ -1,0 +1,29 @@
+{
+  "project_info": {
+    "project_number": "281923562353",
+    "project_id": "parity-2758b",
+    "storage_bucket": "parity-2758b.firebasestorage.app"
+  },
+  "client": [
+    {
+      "client_info": {
+        "mobilesdk_app_id": "1:281923562353:android:f044e312a8ef3c68d6a4d0",
+        "android_client_info": {
+          "package_name": "com.parity.propertyinspection"
+        }
+      },
+      "oauth_client": [],
+      "api_key": [
+        {
+          "current_key": "AIzaSyC0efmJNLaI40MY9CTKXvO_CtvW7pwJOYM"
+        }
+      ],
+      "services": {
+        "appinvite_service": {
+          "other_platform_oauth_client": []
+        }
+      }
+    }
+  ],
+  "configuration_version": "1"
+}

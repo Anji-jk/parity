@@ -3,14 +3,14 @@ import { useMemo, useRef, useState } from 'react';
 
 import { routes } from '@/constants/routes';
 import { toApiError } from '@/services/http/api-error';
-import { authApi } from '../api/auth-api';
+import { startSignupOtp } from '../api/firebase-signup-auth';
 import { DEFAULT_COUNTRY, getCountry } from '../constants/countries';
 import type { SignupErrors, SignupField, SignupValues } from '../types/auth-types';
 import { sanitizePhone, toE164 } from '../utils/phone';
 import { buildRegisterPayload } from '../utils/register-payload';
 import { FIELD_ORDER, firstInvalidField, validateSignup } from '../validation/signup-validation';
 
-const INITIAL: SignupValues = { firstName: '', lastName: '', email: '', countryIso: DEFAULT_COUNTRY.iso, phone: '' };
+const INITIAL: SignupValues = { firstName: '', lastName: '', email: '', countryIso: DEFAULT_COUNTRY.iso, phone: '', password: '' };
 
 export function useSignupForm(options: { onInvalidField?: (field: SignupField) => void } = {}) {
   const router = useRouter();
@@ -51,7 +51,7 @@ export function useSignupForm(options: { onInvalidField?: (field: SignupField) =
 
   const submit = async () => {
     if (inFlight.current) return;
-    setTouched({ firstName: true, lastName: true, email: true, phone: true });
+    setTouched({ firstName: true, lastName: true, email: true, phone: true, password: true });
 
     const invalid = firstInvalidField(clientErrors);
     if (invalid) {
@@ -63,14 +63,14 @@ export function useSignupForm(options: { onInvalidField?: (field: SignupField) =
     setSubmitting(true);
     setFormError(undefined);
     try {
-      const res = await authApi.register(buildRegisterPayload(values));
+      const response = await startSignupOtp(buildRegisterPayload(values));
       router.push({
         pathname: routes.verifyOtp,
         params: {
-          requestId: res.requestId,
+          requestId: response.requestId,
           phone: toE164(getCountry(values.countryIso), values.phone),
-          expiresInSec: String(res.expiresInSec),
-          resendInSec: String(res.resendInSec),
+          expiresInSec: String(response.expiresInSec),
+          resendInSec: String(response.resendInSec),
         },
       });
     } catch (e) {

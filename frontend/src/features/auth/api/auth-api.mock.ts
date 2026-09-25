@@ -6,10 +6,17 @@ const MOCK_OTP = '123456';
 const MAX_ATTEMPTS = 5;
 const EXPIRY_SEC = 60;
 const RESEND_SEC = 30;
+const DEMO_PHONE = '+919876543210';
+const DEMO_EMAIL = 'demo@example.com';
+const DEMO_PASSWORD = 'password123';
 
 const sessions = new Map<string, { payload: RegisterPayload; expiresAt: number; attempts: number }>();
 const session = (requestId: string) => ({ requestId, expiresInSec: EXPIRY_SEC, resendInSec: RESEND_SEC });
-const DEMO_PHONE = '+919876543210';
+const authResponse = (payload: RegisterPayload) => ({
+  accessToken: 'mock-access-token',
+  refreshToken: 'mock-refresh-token',
+  user: { id: 'mock-user', first_name: payload.first_name, last_name: payload.last_name, email: payload.email, phone: payload.phone },
+});
 
 export const mockAuthApi: AuthApi = {
   async register(payload) {
@@ -19,42 +26,36 @@ export const mockAuthApi: AuthApi = {
         fieldErrors: { email: 'This email is already registered' },
       });
     }
-    const requestId = `mock-${Date.now()}`;
-    sessions.set(requestId, { payload, expiresAt: Date.now() + EXPIRY_SEC * 1000, attempts: 0 });
-    return session(requestId);
+    return authResponse(payload);
   },
 
   async login(payload) {
     await wait();
-    if (payload.phone !== DEMO_PHONE) throw new ApiError(404, 'ACCOUNT_NOT_FOUND', 'We could not find an account with this phone number.');
-    const requestId = `mock-login-${Date.now()}`;
-    sessions.set(requestId, {
-      payload: { firstName: 'Demo', lastName: 'User', email: 'demo@example.com', phone: payload.phone },
-      expiresAt: Date.now() + EXPIRY_SEC * 1000,
-      attempts: 0,
-    });
-    return session(requestId);
+    if ((payload.login_id !== DEMO_EMAIL && payload.login_id !== DEMO_PHONE) || payload.password !== DEMO_PASSWORD) {
+      throw new ApiError(401, 'INVALID_CREDENTIALS', 'The email or phone number and password do not match.');
+    }
+    return authResponse({ first_name: 'Demo', last_name: 'User', email: DEMO_EMAIL, phone: DEMO_PHONE, password: DEMO_PASSWORD, firebase_id_token: 'mock-firebase-id-token' });
   },
 
   async verifyOtp({ requestId, otp }) {
     await wait();
-    const s = sessions.get(requestId);
-    if (!s) throw new ApiError(404, 'SESSION_NOT_FOUND', 'Session expired. Please sign up again.');
-    if (s.attempts >= MAX_ATTEMPTS) throw new ApiError(429, 'OTP_LOCKED', 'Too many attempts. Please request a new code.');
-    if (Date.now() > s.expiresAt) throw new ApiError(410, 'OTP_EXPIRED', 'This code has expired. Please request a new one.');
+    const current = sessions.get(requestId);
+    if (!current) throw new ApiError(404, 'SESSION_NOT_FOUND', 'Session expired. Please sign up again.');
+    if (current.attempts >= MAX_ATTEMPTS) throw new ApiError(429, 'OTP_LOCKED', 'Too many attempts. Please request a new code.');
+    if (Date.now() > current.expiresAt) throw new ApiError(410, 'OTP_EXPIRED', 'This code has expired. Please request a new one.');
     if (otp !== MOCK_OTP) {
-      s.attempts += 1;
-      throw new ApiError(400, 'OTP_INVALID', 'Incorrect code.', { details: { attemptsLeft: MAX_ATTEMPTS - s.attempts } });
+      current.attempts += 1;
+      throw new ApiError(400, 'OTP_INVALID', 'Incorrect code.', { details: { attemptsLeft: MAX_ATTEMPTS - current.attempts } });
     }
-    return { accessToken: 'mock-access-token', refreshToken: 'mock-refresh-token', user: { id: 'mock-user', ...s.payload } };
+    return authResponse(current.payload);
   },
 
   async resendOtp(requestId) {
     await wait();
-    const s = sessions.get(requestId);
-    if (!s) throw new ApiError(404, 'SESSION_NOT_FOUND', 'Session expired. Please sign up again.');
-    s.expiresAt = Date.now() + EXPIRY_SEC * 1000;
-    s.attempts = 0;
+    const current = sessions.get(requestId);
+    if (!current) throw new ApiError(404, 'SESSION_NOT_FOUND', 'Session expired. Please sign up again.');
+    current.expiresAt = Date.now() + EXPIRY_SEC * 1000;
+    current.attempts = 0;
     return session(requestId);
   },
 };

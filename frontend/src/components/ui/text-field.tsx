@@ -1,6 +1,5 @@
 import { forwardRef, useState, type ReactNode } from 'react';
-import { StyleSheet, TextInput, View, type TextInputProps } from 'react-native';
-
+import { StyleSheet, TextInput, TouchableOpacity, View, type TextInputProps } from 'react-native';
 import { colors, fontFamily } from '@/theme';
 import { AppIcon, type IconSpec } from './app-icon';
 import { AppText } from './app-text';
@@ -8,13 +7,14 @@ import { AppText } from './app-text';
 type Props = Omit<TextInputProps, 'style' | 'placeholderTextColor'> & {
   label: string;
   icon: IconSpec;
+  rightIcon?: IconSpec & { onPress?: () => void };
   error?: string;
   /** Rendered between the icon and the text (e.g. country code picker). */
   prefix?: ReactNode;
 };
 
 export const TextField = forwardRef<TextInput, Props>(function TextField(
-  { label, icon, error, prefix, onFocus, onBlur, ...inputProps },
+  { label, icon, rightIcon, error, prefix, onFocus, onBlur, ...inputProps },
   ref,
 ) {
   const [focused, setFocused] = useState(false);
@@ -45,6 +45,16 @@ export const TextField = forwardRef<TextInput, Props>(function TextField(
             style={styles.input}
           />
         </View>
+
+        {rightIcon && (
+          <TouchableOpacity
+            onPress={rightIcon.onPress}
+            activeOpacity={0.7}
+            hitSlop={{ top: 10, bottom: 10, left: 10, right: 10 }}
+          >
+            <AppIcon icon={rightIcon} size={22} color={colors.textSecondary} />
+          </TouchableOpacity>
+        )}
       </View>
       {error ? (
         <AppText variant="error" color={colors.error} style={styles.error}>

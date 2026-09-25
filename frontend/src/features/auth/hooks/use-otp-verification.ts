@@ -6,6 +6,7 @@ import { useCountdown } from '@/hooks/use-countdown';
 import { toApiError } from '@/services/http/api-error';
 import { tokenStorage } from '@/services/storage/token-storage';
 import { authApi } from '../api/auth-api';
+import { confirmSignupOtp, resendSignupOtp } from '../api/firebase-signup-auth';
 import { OTP_LENGTH } from '../constants/auth-config';
 
 type Params = { requestId: string; expiresInSec: number; resendInSec: number };
@@ -36,8 +37,12 @@ export function useOtpVerification({ requestId, expiresInSec, resendInSec }: Par
     setVerifying(true);
     setError(undefined);
     try {
-      const res = await authApi.verifyOtp({ requestId, otp });
-      await tokenStorage.save({ accessToken: res.accessToken, refreshToken: res.refreshToken });
+      const res = requestId === 'firebase'
+        ? await confirmSignupOtp(otp)
+        : await authApi.verifyOtp({ requestId, otp });
+      if (res.accessToken && res.refreshToken) {
+        await tokenStorage.save({ accessToken: res.accessToken, refreshToken: res.refreshToken });
+      }
       router.replace(routes.roleSelection);
     } catch (e) {
       const err = toApiError(e);
@@ -74,7 +79,9 @@ export function useOtpVerification({ requestId, expiresInSec, resendInSec }: Par
     setResending(true);
     setError(undefined);
     try {
-      const res = await authApi.resendOtp(requestId);
+      const res = requestId === 'firebase'
+        ? await resendSignupOtp()
+        : await authApi.resendOtp(requestId);
       setOtpState('');
       setLocked(false);
       expiry.restart(res.expiresInSec);

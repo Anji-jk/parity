@@ -33,7 +33,7 @@ export function WelcomeScreen() {
         <FeatureRow />
         <PaginationDots count={WELCOME_COPY.pageCount} activeIndex={WELCOME_COPY.activePage} style={{ marginTop: spacing.xl - 4 }} />
         <ActionButtons
-          onCreateAccount={() => router.push(routes.signup)}
+          onCreateAccount={() => router.push(routes.roleSelection)}
           onLogIn={() => router.push(routes.login)}
         />
         <TaglineDivider />

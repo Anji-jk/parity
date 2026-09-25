@@ -1,6 +1,6 @@
 import { Feather } from '@expo/vector-icons';
 import { useRouter } from 'expo-router';
-import { useRef } from 'react';
+import { useRef, useState } from 'react';
 import { KeyboardAvoidingView, ScrollView, StyleSheet, TextInput, View } from 'react-native';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 
@@ -21,10 +21,13 @@ export function SignupScreen() {
   const insets = useSafeAreaInsets();
   const keyboardVisible = useKeyboardVisible();
 
+  const [showPassword, setShowPassword] = useState(false);
+
   const firstNameRef = useRef<TextInput>(null);
   const lastNameRef = useRef<TextInput>(null);
   const emailRef = useRef<TextInput>(null);
   const phoneRef = useRef<TextInput>(null);
+  const passwordRef = useRef<TextInput>(null);
 
   const focusField = (field: SignupField) => {
     const map: Record<SignupField, TextInput | null> = {
@@ -32,6 +35,7 @@ export function SignupScreen() {
       lastName: lastNameRef.current,
       email: emailRef.current,
       phone: phoneRef.current,
+      password: passwordRef.current,
     };
     map[field]?.focus();
   };
@@ -105,6 +109,25 @@ export function SignupScreen() {
               onSubmitEditing={() => phoneRef.current?.focus()}
             />
             <TextField
+              ref={passwordRef}
+              label="Password"
+              icon={{ family: 'ionicons', name: 'lock-closed-outline' }}
+              rightIcon={{
+                family: 'ionicons',
+                name: showPassword ? 'eye-off-outline' : 'eye-outline',
+                onPress: () => setShowPassword((prev) => !prev),
+              }}
+              value={values.password}
+              onChangeText={(t) => form.setField('password', t)}
+              onBlur={() => form.markTouched('password')}
+              error={errors.password}
+              secureTextEntry={!showPassword} // <-- Dynamic secure text toggle
+              autoComplete="new-password"
+              textContentType="newPassword"
+              returnKeyType="done"
+              onSubmitEditing={form.submit}
+            />
+            <TextField
               ref={phoneRef}
               label="Phone Number"
               icon={{ family: 'ionicons', name: 'call' }}
@@ -117,7 +140,7 @@ export function SignupScreen() {
               autoComplete="tel"
               textContentType="telephoneNumber"
               returnKeyType="done"
-              onSubmitEditing={form.submit}
+              onSubmitEditing={() => passwordRef.current?.focus()}
             />
           </View>
 
