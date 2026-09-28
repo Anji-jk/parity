@@ -1,58 +1,81 @@
 import { env } from '@/config/env';
-import { authApi } from './auth-api';
 import type { ConfirmationResult } from '@react-native-firebase/auth';
-import type { RegisterPayload, SignupPayload } from '../types/auth-types';
 
 const MOCK_OTP = '123456';
 const EXPIRY_SEC = 60;
 const RESEND_SEC = 30;
 
 let confirmation: ConfirmationResult | undefined;
-let pendingPayload: SignupPayload | undefined;
+let activePhone: string | undefined;
 
 async function getFirebaseAuth() {
   return import('@react-native-firebase/auth');
 }
 
-export type SignupOtpSession = {
+export type PhoneVerificationResult = {
+  firebaseUid: string;
+  firebaseIdToken: string;
+};
+
+
+export type PhoneVerificationSession = {
   requestId: 'firebase';
   expiresInSec: number;
   resendInSec: number;
 };
 
-export async function startSignupOtp(payload: SignupPayload): Promise<SignupOtpSession> {
-  pendingPayload = payload;
-  if (!env.useMockApi) {
+export async function startPhoneVerification(phone: string): Promise<PhoneVerificationSession> {
+  activePhone = phone;
+
+  if (!env.useMockOtp) {
     const { getAuth, signInWithPhoneNumber } = await getFirebaseAuth();
-    confirmation = await signInWithPhoneNumber(getAuth(), payload.phone);
+    confirmation = await signInWithPhoneNumber(getAuth(), phone);
   }
+
   return { requestId: 'firebase', expiresInSec: EXPIRY_SEC, resendInSec: RESEND_SEC };
 }
 
-export async function resendSignupOtp(): Promise<SignupOtpSession> {
-  if (!pendingPayload) throw new Error('Signup session expired. Please start again.');
-  if (!env.useMockApi) {
-    const { getAuth, signInWithPhoneNumber } = await getFirebaseAuth();
-    confirmation = await signInWithPhoneNumber(getAuth(), pendingPayload.phone);
+export async function resendPhoneVerification(): Promise<PhoneVerificationSession> {
+  if (!activePhone) {
+    throw new Error('Verification session expired. Please enter your phone number again.');
   }
+
+  if (!env.useMockOtp) {
+    const { getAuth, signInWithPhoneNumber } = await getFirebaseAuth();
+    confirmation = await signInWithPhoneNumber(getAuth(), activePhone);
+  }
+
   return { requestId: 'firebase', expiresInSec: EXPIRY_SEC, resendInSec: RESEND_SEC };
 }
 
-export async function confirmSignupOtp(otp: string) {
-  if (!pendingPayload) throw new Error('Signup session expired. Please start again.');
-
-  let firebaseIdToken = 'mock-firebase-id-token';
-  if (env.useMockApi) {
-    if (otp !== MOCK_OTP) throw new Error('Incorrect code. Please try again.');
-  } else {
-    if (!confirmation) throw new Error('Signup session expired. Please request a new code.');
-    const credential = await confirmation.confirm(otp);
-    firebaseIdToken = await credential.user.getIdToken();
+export async function confirmPhoneVerification(otp: string): Promise<PhoneVerificationResult> {
+  if (env.useMockOtp) {
+    if (otp !== MOCK_OTP) {
+      throw new Error('Incorrect code. Please try again.');
+    }
+    clearVerificationSession();
+    return {
+      firebaseUid: 'mock-firebase-uid',
+      firebaseIdToken: 'mock-firebase-id-token',
+    };
   }
 
-  const payload: RegisterPayload = { ...pendingPayload, firebase_id_token: firebaseIdToken };
-  const response = await authApi.register(payload);
-  pendingPayload = undefined;
+  if (!confirmation) {
+    throw new Error('Verification session expired. Please request a new code.');
+  }
+
+  const credential = await confirmation.confirm(otp);
+  const firebaseUser = credential.user;
+  const firebaseIdToken = await credential.user.getIdToken();
+
+  clearVerificationSession();
+  return {
+    firebaseUid: firebaseUser.uid,
+    firebaseIdToken,
+  };
+}
+
+export function clearVerificationSession(): void {
   confirmation = undefined;
-  return response;
+  activePhone = undefined;
 }

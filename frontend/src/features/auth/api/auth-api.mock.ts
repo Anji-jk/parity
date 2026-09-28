@@ -1,5 +1,5 @@
 import { ApiError } from '@/services/http/api-error';
-import type { AuthApi, RegisterPayload } from '../types/auth-types';
+import type { AuthApi, AuthUser, RegisterPayload } from '../types/auth-types';
 
 const wait = (ms = 700) => new Promise((r) => setTimeout(r, ms));
 const MOCK_OTP = '123456';
@@ -12,21 +12,30 @@ const DEMO_PASSWORD = 'password123';
 
 const sessions = new Map<string, { payload: RegisterPayload; expiresAt: number; attempts: number }>();
 const session = (requestId: string) => ({ requestId, expiresInSec: EXPIRY_SEC, resendInSec: RESEND_SEC });
-const authResponse = (payload: RegisterPayload) => ({
+const authResponse = (user: AuthUser) => ({
   accessToken: 'mock-access-token',
   refreshToken: 'mock-refresh-token',
-  user: { id: 'mock-user', first_name: payload.first_name, last_name: payload.last_name, email: payload.email, phone: payload.phone },
+  user,
 });
 
 export const mockAuthApi: AuthApi = {
   async register(payload) {
+    console.log('Mock signup payload:', JSON.stringify(payload, null, 2));
+
     await wait();
     if (payload.email === 'taken@example.com') {
       throw new ApiError(409, 'EMAIL_TAKEN', 'This email is already registered.', {
         fieldErrors: { email: 'This email is already registered' },
       });
     }
-    return authResponse(payload);
+    return authResponse({
+      id: 'mock-user',
+      firstName: payload.firstName,
+      lastName: payload.lastName,
+      email: payload.email,
+      phone: payload.phone,
+      role: payload.role,
+    });
   },
 
   async login(payload) {
@@ -34,7 +43,14 @@ export const mockAuthApi: AuthApi = {
     if ((payload.login_id !== DEMO_EMAIL && payload.login_id !== DEMO_PHONE) || payload.password !== DEMO_PASSWORD) {
       throw new ApiError(401, 'INVALID_CREDENTIALS', 'The email or phone number and password do not match.');
     }
-    return authResponse({ first_name: 'Demo', last_name: 'User', email: DEMO_EMAIL, phone: DEMO_PHONE, password: DEMO_PASSWORD, firebase_id_token: 'mock-firebase-id-token' });
+    return authResponse({
+      id: 'mock-user',
+      firstName: 'Demo',
+      lastName: 'User',
+      email: DEMO_EMAIL,
+      phone: DEMO_PHONE,
+      role: 'owner',
+    });
   },
 
   async verifyOtp({ requestId, otp }) {
@@ -47,7 +63,14 @@ export const mockAuthApi: AuthApi = {
       current.attempts += 1;
       throw new ApiError(400, 'OTP_INVALID', 'Incorrect code.', { details: { attemptsLeft: MAX_ATTEMPTS - current.attempts } });
     }
-    return authResponse(current.payload);
+    return authResponse({
+      id: 'mock-user',
+      firstName: current.payload.firstName,
+      lastName: current.payload.lastName,
+      email: current.payload.email,
+      phone: current.payload.phone,
+      role: current.payload.role,
+    });
   },
 
   async resendOtp(requestId) {

@@ -7,6 +7,7 @@ node_modules/
 .expo/
 .claude/
 .vscode/
+android/
 dist/
 web-build/
 expo-env.d.ts
@@ -22,6 +23,7 @@ expo-env.d.ts
 
 CLAUDE.md 
 AGENTS.md 
+google-services.json
 
 # Metro
 .metro-health-check*
@@ -37,7 +39,7 @@ yarn-error.*
 
 # local env files
 .env*.local
-
+.env
 # typescript
 *.tsbuildinfo
 
@@ -46,3 +48,4 @@ example
 # generated native folders
 /ios
 /android
+

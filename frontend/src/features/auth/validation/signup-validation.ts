@@ -1,11 +1,11 @@
 import { getCountry } from '../constants/countries';
-import type { SignupErrors, SignupField, SignupValues } from '../types/auth-types';
+import type { RegistrationDraft, SignupErrors, SignupField } from '../types/auth-types';
 import { digitsOnly } from '../utils/phone';
 
-export const FIELD_ORDER: SignupField[] = ['firstName', 'lastName', 'email', 'phone', 'password'];
+export const FIELD_ORDER: SignupField[] = ['firstName', 'lastName', 'email', 'phone', 'password', 'propertyCode'];
 
 const NAME_BAD_CHARS = /[\d!@#$%^&*()_+=[\]{};:"\\|,<>/?~`]/;
-const EMAIL_PATTERN = /^[^\s@]+@[^\s@]+\.[^\s@]{2,}$/;
+const EMAIL_PATTERN = /^[a-zA-Z0-9._%+-]+@[a-zA-Z0-9.-]+\.[a-zA-Z]{2,}$/;
 
 export const normalizeName = (v: string) => v.trim().replace(/\s+/g, ' ');
 
@@ -36,16 +36,28 @@ function validatePhone(iso: string, raw: string): string | undefined {
 function validatePassword(raw: string): string | undefined {
   if (!raw) return 'Password is required';
   if (raw.length < 8) return 'Password must be at least 8 characters';
+  if (raw.length > 16) return 'Password must be 16 characters or fewer';
+  if (!/[A-Z]/.test(raw)) return 'Password must contain at least one uppercase letter';
+  if (!/[a-z]/.test(raw)) return 'Password must contain at least one lowercase letter';
+  if (!/[0-9]/.test(raw)) return 'Password must contain at least one number';
+  // if (!/[!@#$%^&*()_+\-=[\]{};':"\\|,.<>/?~`]/.test(raw)) return 'Password must contain at least one special character';
   return undefined;
 }
 
-export function validateSignup(v: SignupValues): SignupErrors {
+function validatePropertyCode(raw:string): string | undefined {
+  if (!raw.trim()) return 'Property code is required';
+  if (raw.trim().length !== 6) return 'Property code must be 6 characters';
+  return undefined;
+}
+
+export function validateSignup(v: RegistrationDraft): SignupErrors {
   return {
     firstName: validateName('First name', v.firstName),
     lastName: validateName('Last name', v.lastName),
     email: validateEmail(v.email),
     phone: validatePhone(v.countryIso, v.phone),
     password: validatePassword(v.password),
+    propertyCode: v.role === 'worker' ? validatePropertyCode(v.propertyCode) : undefined,
   };
 }
 

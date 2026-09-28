@@ -1,36 +1,18 @@
-import { useState } from 'react';
+import { useState } from "react";
 
-import {
-  Image,
-  StyleSheet,
-  View,
-  type LayoutChangeEvent,
-} from 'react-native';
+import { Image, StyleSheet, View, type LayoutChangeEvent } from "react-native";
 
-import Svg, {
-  ClipPath,
-  Defs,
-  Image as SvgImage,
-  Path,
-} from 'react-native-svg';
+import Svg, { ClipPath, Defs, Path, Image as SvgImage } from "react-native-svg";
 
-import { images } from '@/constants/assets';
-import { useResponsive } from '@/hooks/use-responsive';
-import { getAspectRatio, toSvgHref } from '@/utils/image';
+import { images } from "@/constants/assets";
+import { useResponsive } from "@/hooks/use-responsive";
+import { getAspectRatio, toSvgHref } from "@/utils/image";
 
-import { buildHeroClipPath } from '../utils/hero-clip-path';
+import { buildHeroClipPath } from "../utils/hero-clip-path";
 
 const HERO_HEIGHT_RATIO = 0.82;
 
-const PHONE_WIDTH_RATIO = 0.46;
-const PHONE_RIGHT_RATIO = 0.015;
-const PHONE_BOTTOM_RATIO = 0.005;
-
-const TAGLINE_WIDTH_RATIO = 0.27;
-const TAGLINE_LEFT_RATIO = 0.69;
-const TAGLINE_TOP_RATIO = 0.10;
-
-const LEAVES_WIDTH_RATIO = 0.20;
+const LEAVES_WIDTH_RATIO = 0.2;
 const LEAVES_LEFT_RATIO = -0.13;
 
 export function HeroShowcase() {
@@ -42,14 +24,10 @@ export function HeroShowcase() {
   });
 
   const onLayout = (e: LayoutChangeEvent) => {
-    const { width: layoutWidth, height: layoutHeight } =
-      e.nativeEvent.layout;
+    const { width: layoutWidth, height: layoutHeight } = e.nativeEvent.layout;
 
     setSize((prev) => {
-      if (
-        prev.w === layoutWidth &&
-        prev.h === layoutHeight
-      ) {
+      if (prev.w === layoutWidth && prev.h === layoutHeight) {
         return prev;
       }
 
@@ -62,22 +40,7 @@ export function HeroShowcase() {
 
   const { w, h } = size;
 
-  const phoneAspect = getAspectRatio(
-    images.onboarding.phoneInHand,
-    0.88,
-  );
-
-  const taglineAspect = getAspectRatio(
-    images.onboarding.taglineCapture,
-    0.9,
-  );
-
-  const leavesAspect = getAspectRatio(
-    images.decor.leavesTop,
-    1.1,
-  );
-
-  const phoneWidth = w * PHONE_WIDTH_RATIO;
+  const leavesAspect = getAspectRatio(images.decor.leavesTop, 1.1);
 
   return (
     <View
@@ -97,11 +60,7 @@ export function HeroShowcase() {
           {/* ============================== */}
 
           <View style={styles.heroBackground} pointerEvents="none">
-            <Svg
-              width={w}
-              height={h}
-              style={StyleSheet.absoluteFill}
-            >
+            <Svg width={w} height={h} style={StyleSheet.absoluteFill}>
               <Defs>
                 <ClipPath id="heroClip">
                   <Path d={buildHeroClipPath(w, h)} />
@@ -124,23 +83,19 @@ export function HeroShowcase() {
           {/* FOREGROUND ELEMENTS              */}
           {/* ============================== */}
 
-          <View
-            style={styles.foreground}
-            pointerEvents="none"
-          >
+          <View style={styles.foreground} pointerEvents="none">
             {/* Leaves */}
             <Image
               source={images.decor.leavesTop}
               resizeMode="contain"
               style={{
-                position: 'absolute',
+                position: "absolute",
                 left: w * LEAVES_LEFT_RATIO,
                 bottom: 0,
                 width: w * LEAVES_WIDTH_RATIO,
                 aspectRatio: leavesAspect,
               }}
             />
-
           </View>
         </>
       )}
@@ -150,16 +105,16 @@ export function HeroShowcase() {
 
 const styles = StyleSheet.create({
   container: {
-    alignSelf: 'center',
-    position: 'relative',
-    overflow: 'hidden',
+    alignSelf: "center",
+    position: "relative",
+    overflow: "hidden",
   },
 
   heroBackground: {
     ...StyleSheet.absoluteFill,
     zIndex: 0,
   },
-  
+
   foreground: {
     ...StyleSheet.absoluteFill,
     zIndex: 10,

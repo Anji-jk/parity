@@ -3,25 +3,32 @@ import { useMemo, useRef, useState } from 'react';
 
 import { routes } from '@/constants/routes';
 import { toApiError } from '@/services/http/api-error';
-import { startSignupOtp } from '../api/firebase-signup-auth';
+import { startPhoneVerification } from '../api/firebase-signup-auth';
 import { DEFAULT_COUNTRY, getCountry } from '../constants/countries';
 import type { SignupErrors, SignupField, SignupValues } from '../types/auth-types';
 import { sanitizePhone, toE164 } from '../utils/phone';
-import { buildRegisterPayload } from '../utils/register-payload';
+import { useRegistration } from '@/state/auth/signup-context';
 import { FIELD_ORDER, firstInvalidField, validateSignup } from '../validation/signup-validation';
+
 
 const INITIAL: SignupValues = { firstName: '', lastName: '', email: '', countryIso: DEFAULT_COUNTRY.iso, phone: '', password: '' };
 
 export function useSignupForm(options: { onInvalidField?: (field: SignupField) => void } = {}) {
   const router = useRouter();
+  const { state: registrationDraft, updateAccount } = useRegistration();
+
   const [values, setValues] = useState<SignupValues>(INITIAL);
   const [touched, setTouched] = useState<Partial<Record<SignupField, boolean>>>({});
   const [serverErrors, setServerErrors] = useState<SignupErrors>({});
   const [formError, setFormError] = useState<string>();
   const [submitting, setSubmitting] = useState(false);
+
   const inFlight = useRef(false);
 
-  const clientErrors = useMemo(() => validateSignup(values), [values]);
+  const clientErrors = useMemo(
+    () => validateSignup({ ...registrationDraft, ...values }),
+    [registrationDraft, values],
+  );
 
   const errors = useMemo(() => {
     const out: SignupErrors = {};
@@ -51,7 +58,14 @@ export function useSignupForm(options: { onInvalidField?: (field: SignupField) =
 
   const submit = async () => {
     if (inFlight.current) return;
-    setTouched({ firstName: true, lastName: true, email: true, phone: true, password: true });
+    setTouched({ 
+      firstName: true, 
+      lastName: true, 
+      email: true, 
+      phone: true, 
+      password: true,
+       ...(registrationDraft.role === 'worker' ? { propertyCode: true } : {}),
+     });
 
     const invalid = firstInvalidField(clientErrors);
     if (invalid) {
@@ -63,12 +77,16 @@ export function useSignupForm(options: { onInvalidField?: (field: SignupField) =
     setSubmitting(true);
     setFormError(undefined);
     try {
-      const response = await startSignupOtp(buildRegisterPayload(values));
+      updateAccount(values);
+
+      const phone = toE164(getCountry(values.countryIso), values.phone);
+      const response = await startPhoneVerification(phone);
+
       router.push({
         pathname: routes.verifyOtp,
         params: {
           requestId: response.requestId,
-          phone: toE164(getCountry(values.countryIso), values.phone),
+          phone,
           expiresInSec: String(response.expiresInSec),
           resendInSec: String(response.resendInSec),
         },

@@ -6,13 +6,18 @@ import { useCountdown } from '@/hooks/use-countdown';
 import { toApiError } from '@/services/http/api-error';
 import { tokenStorage } from '@/services/storage/token-storage';
 import { authApi } from '../api/auth-api';
-import { confirmSignupOtp, resendSignupOtp } from '../api/firebase-signup-auth';
+import { confirmPhoneVerification, resendPhoneVerification } from '../api/firebase-signup-auth';
 import { OTP_LENGTH } from '../constants/auth-config';
+
+import { useRegistration } from '@/state/auth/signup-context';
+import type { RegisterPayload } from '../types/auth-types';
 
 type Params = { requestId: string; expiresInSec: number; resendInSec: number };
 
 export function useOtpVerification({ requestId, expiresInSec, resendInSec }: Params) {
   const router = useRouter();
+  const { state: registrationDraft, resetRegistration } = useRegistration();
+
   const [otp, setOtpState] = useState('');
   const [error, setError] = useState<string>();
   const [verifying, setVerifying] = useState(false);
@@ -37,13 +42,41 @@ export function useOtpVerification({ requestId, expiresInSec, resendInSec }: Par
     setVerifying(true);
     setError(undefined);
     try {
-      const res = requestId === 'firebase'
-        ? await confirmSignupOtp(otp)
-        : await authApi.verifyOtp({ requestId, otp });
+      if (!registrationDraft.role) throw new Error('Role is not selected');
+
+      let res;
+      if (requestId === 'firebase') {
+        const { firebaseIdToken } = await confirmPhoneVerification(otp);
+        const payload: RegisterPayload = {
+          firstName: registrationDraft.firstName,
+          lastName: registrationDraft.lastName,
+          email: registrationDraft.email,
+          phone: registrationDraft.phone,
+          password: registrationDraft.password,
+          role: registrationDraft.role,
+          ...(registrationDraft.propertyCode
+            ? { property_code: registrationDraft.propertyCode }
+            : {}),
+          firebaseIdToken,
+        };
+        res = await authApi.register(payload);
+      } else {
+        res = await authApi.verifyOtp({ requestId, otp });
+      }
+
       if (res.accessToken && res.refreshToken) {
         await tokenStorage.save({ accessToken: res.accessToken, refreshToken: res.refreshToken });
       }
-      router.replace(routes.roleSelection);
+
+      if (registrationDraft.role === 'owner') {
+        router.replace(routes.addProperty);
+      } else {
+        // router.replace(routes.workerDashboard);
+        router.replace(routes.home);
+      }
+
+      resetRegistration();
+
     } catch (e) {
       const err = toApiError(e);
       switch (err.code) {
@@ -80,7 +113,7 @@ export function useOtpVerification({ requestId, expiresInSec, resendInSec }: Par
     setError(undefined);
     try {
       const res = requestId === 'firebase'
-        ? await resendSignupOtp()
+        ? await resendPhoneVerification()
         : await authApi.resendOtp(requestId);
       setOtpState('');
       setLocked(false);
