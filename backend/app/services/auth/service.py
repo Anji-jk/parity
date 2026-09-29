@@ -69,7 +69,19 @@ class AuthService:
         # If the session exists, mark it as revoked to invalidate it
         if session:
             session.is_revoked = True
-            db.commit()
+            try:
+                db.commit()
+            except Exception as exc:
+                db.rollback()
+                logger.error("Logout failed while revoking session (%s)", type(exc).__name__)
+                raise AppError(
+                    "LOGOUT_FAILED",
+                    status.HTTP_500_INTERNAL_SERVER_ERROR,
+                    "Unable to sign out right now.",
+                ) from None
+            logger.info("Logout succeeded; session revoked")
+        else:
+            logger.info("Logout requested for an unknown or previously rotated refresh token")
 
     @classmethod
     def register(
@@ -84,7 +96,7 @@ class AuthService:
             db, AvailabilityCheckRequest(email=data.email, phone=data.phone)
         )
         if not availability.is_available:
-            cls._raise_availability_error(availability)
+            cls.raise_availability_error(availability)
 
         # 2. Verify Firebase OTP Token against the provided phone
         verify_phone_token(id_token=data.firebase_id_token, expected_phone=data.phone)
@@ -115,7 +127,7 @@ class AuthService:
                     "Signup blocked by a database uniqueness conflict: field=%s",
                     availability.conflict_field,
                 )
-                cls._raise_availability_error(availability)
+                cls.raise_availability_error(availability)
             logger.error("Signup database insert failed with an integrity error")
             raise AppError(
                 "SIGNUP_FAILED",
@@ -178,15 +190,13 @@ class AuthService:
             else str(user.userRole)
         )
 
-        access_token = create_access_token(
-            data={"sub": user.id, "role": role_value}
-        )
         new_refresh_token = create_refresh_token()
         refresh_expires = datetime.now(timezone.utc).replace(tzinfo=None) + timedelta(
             days=settings.REFRESH_TOKEN_EXPIRE_DAYS
         )
 
         if existing_session:
+            session_id = existing_session.id
             existing_session.refresh_token = new_refresh_token
             existing_session.expires_at = refresh_expires
             if ip_address:
@@ -204,6 +214,11 @@ class AuthService:
                 expires_at=refresh_expires,
             )
             db.add(new_session)
+            session_id = new_session.id
+
+        access_token = create_access_token(
+            data={"sub": user.id, "role": role_value, "sid": session_id}
+        )
 
         response = TokenResponse(
             access_token=access_token,
@@ -273,7 +288,7 @@ class AuthService:
         )
 
     @staticmethod
-    def _raise_availability_error(availability: AvailabilityResponse) -> None:
+    def raise_availability_error(availability: AvailabilityResponse) -> None:
         field = availability.conflict_field
         if field == "email":
             raise AppError(
