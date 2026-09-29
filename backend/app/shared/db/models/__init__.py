@@ -1,0 +1,1 @@
+from src.shared.db.models.user import AppUser
