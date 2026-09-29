@@ -12,8 +12,6 @@ ENV/
 .venv/
 
 # Environment variables & secrets
-=======
->>>>>>> 6d20b466977b3c3665a84b1ef9293280af885517
 .env
 .env.*
 !.env.example
@@ -62,6 +60,5 @@ ENV/
 build/
 dist/
 *.egg-info/
->>>>>>> 6d20b466977b3c3665a84b1ef9293280af885517
 
 firebase-adminsdk.json
