@@ -3,7 +3,7 @@ from typing import Literal, Optional
 
 from pydantic import AliasChoices, BaseModel, ConfigDict, EmailStr, Field
 
-from src.shared.db.enums.role import Role
+from app.shared.db.enums.role import Role
 
 class SignupRequest(BaseModel):
     firstName: str

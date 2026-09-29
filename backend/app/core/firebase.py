@@ -1,7 +1,7 @@
 import firebase_admin
 from firebase_admin import auth, credentials
-from src.core.config import settings
-from src.core.exceptions import AppError
+from app.core.config import settings
+from app.core.exceptions import AppError
 
 def init_firebase():
     if not firebase_admin._apps:

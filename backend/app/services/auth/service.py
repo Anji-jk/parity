@@ -4,15 +4,15 @@ from sqlalchemy import or_
 from sqlalchemy.exc import IntegrityError
 from sqlalchemy.orm import Session as DBSession
 
-from src.core.firebase import verify_phone_token
-from src.core.exceptions import AppError
-from src.core.security import hash_password
-from src.services.auth.schema import (
+from app.core.firebase import verify_phone_token
+from app.core.exceptions import AppError
+from app.core.security import hash_password
+from app.services.auth.schema import (
     AvailabilityCheckRequest,
     AvailabilityResponse,
     SignupRequest,
 )
-from src.shared.db.models.user import AppUser
+from app.shared.db.models.user import AppUser
 
 def generae_user_id() -> str:
     return f"{secrets.randbelow(10**6):06d}"

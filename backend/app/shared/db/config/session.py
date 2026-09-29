@@ -1,7 +1,7 @@
 from collections.abc import Generator
 from sqlalchemy.orm import Session, sessionmaker
 
-from src.shared.db.config.connection import engine
+from app.shared.db.config.connection import engine
 
 SessionLocal = sessionmaker(autocommit=False, autoflush=False, bind=engine)
 

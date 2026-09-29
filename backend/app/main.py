@@ -3,13 +3,13 @@ from fastapi import FastAPI, Request
 from fastapi.middleware.cors import CORSMiddleware
 from fastapi.exceptions import RequestValidationError
 from fastapi.responses import JSONResponse
-from src.core.firebase import init_firebase
+from app.core.firebase import init_firebase
 
-from src.core.config import settings
-from src.core.database import init_db
-from src.core.exceptions import AppError
+from app.core.config import settings
+from app.core.database import init_db
+from app.core.exceptions import AppError
 
-from src.services.auth.routes import router as auth_router
+from app.services.auth.routes import router as auth_router
 
 
 @asynccontextmanager

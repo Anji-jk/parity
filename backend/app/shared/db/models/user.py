@@ -3,8 +3,8 @@ from datetime import datetime
 from sqlalchemy import Boolean, DateTime, Enum, String
 from sqlalchemy.orm import Mapped, mapped_column, relationship
 
-from src.shared.db.config.base import Base
-from src.shared.db.enums.role import Role
+from app.shared.db.config.base import Base
+from app.shared.db.enums.role import Role
 
 
 class AppUser(Base):

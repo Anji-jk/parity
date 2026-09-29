@@ -3,11 +3,11 @@ from fastapi.security import HTTPAuthorizationCredentials, HTTPBearer
 from jose import JWTError, jwt
 from sqlalchemy.orm import Session as DBSession
 
-from src.core.config import settings
-from src.core.exceptions import AppError
-from src.shared.db.enums.role import Role
-from src.shared.db.config.session import get_db
-from src.shared.db.models.user import AppUser
+from app.core.config import settings
+from app.core.exceptions import AppError
+from app.shared.db.enums.role import Role
+from app.shared.db.config.session import get_db
+from app.shared.db.models.user import AppUser
 
 security = HTTPBearer(auto_error=False)
 
