@@ -1,3 +1,4 @@
+<<<<<<< HEAD
 # Byte-compiled / optimized / cache files
 __pycache__/
 *.py[cod]
@@ -11,10 +12,13 @@ ENV/
 .venv/
 
 # Environment variables & secrets
+=======
+>>>>>>> 6d20b466977b3c3665a84b1ef9293280af885517
 .env
 .env.*
 !.env.example
 
+<<<<<<< HEAD
 # Local SQLite databases
 *.db
 *.sqlite
@@ -34,3 +38,30 @@ htmlcov/
 
 # Logs
 *.log
+=======
+secrets/
+
+# Python bytecode and caches
+__pycache__/
+*.py[cod]
+*$py.class
+.pytest_cache/
+.mypy_cache/
+.ruff_cache/
+.coverage
+.coverage.*
+htmlcov/
+
+# Local Python environments
+.venv/
+venv/
+env/
+ENV/
+
+# Build and packaging outputs
+build/
+dist/
+*.egg-info/
+>>>>>>> 6d20b466977b3c3665a84b1ef9293280af885517
+
+firebase-adminsdk.json
