@@ -4,7 +4,7 @@ import firebase_admin
 from firebase_admin import auth, credentials
 from app.core.config import settings
 from app.core.exceptions import AppError
-from app.shared.utils.phone import normalize_us_phone
+from app.shared.utils.phone import normalize_phone
 
 logger = logging.getLogger(__name__)
 
@@ -47,9 +47,9 @@ def verify_phone_token(id_token: str, expected_phone: str) -> None:
             "Phone verification token does not include a phone number.",
         )
     try:
-        normalized_firebase_phone = normalize_us_phone(firebase_phone)
+        normalized_firebase_phone = normalize_phone(firebase_phone)
     except ValueError as exc:
-        logger.warning("Phone verification rejected: token phone is not a supported 10-digit number")
+        logger.warning("Phone verification rejected: token phone is not valid E.164 with 10 national digits")
         raise AppError(
             "OTP_INVALID",
             401,
