@@ -3,10 +3,12 @@ from firebase_admin import auth, credentials
 from app.core.config import settings
 from app.core.exceptions import AppError
 
-def init_firebase():
+
+def init_firebase() -> None:
     if not firebase_admin._apps:
         cred = credentials.Certificate(settings.FIREBASE_CREDENTIALS_PATH)
         firebase_admin.initialize_app(cred)
+
 
 def verify_phone_token(id_token: str, expected_phone: str) -> None:
     if not id_token:
@@ -41,3 +43,34 @@ def verify_phone_token(id_token: str, expected_phone: str) -> None:
             400,
             "Verified phone number does not match the submitted phone number.",
         )
+
+
+def verify_and_get_phone(id_token: str) -> str:
+    """Verifies a Firebase ID token and returns the verified phone number."""
+    if not id_token:
+        raise AppError("OTP_REQUIRED", 401, "Phone verification is required.")
+
+    if settings.ENVIRONMENT == "development" and id_token in {
+        "dev-bypass-token",
+        "mock-firebase-id-token",
+    }:
+        return "+10000000000"
+
+    try:
+        decoded_token = auth.verify_id_token(id_token)
+    except Exception as exc:
+        raise AppError(
+            "OTP_INVALID",
+            401,
+            "Phone verification failed. Please verify your phone number again.",
+        ) from exc
+
+    phone_number = decoded_token.get("phone_number")
+    if not phone_number:
+        raise AppError(
+            "OTP_INVALID",
+            401,
+            "Phone verification token does not include a phone number.",
+        )
+
+    return phone_number
