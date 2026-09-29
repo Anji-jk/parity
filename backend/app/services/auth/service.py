@@ -1,6 +1,7 @@
 from datetime import datetime, timedelta, timezone
-import secrets
+import logging
 from typing import Optional
+import uuid
 from fastapi import status
 from sqlalchemy import or_
 from sqlalchemy.exc import IntegrityError
@@ -26,9 +27,11 @@ from app.services.auth.schema import (
 from app.shared.db.models.user import AppUser
 from app.shared.db.models.user_session import UserSession
 
+logger = logging.getLogger(__name__)
 
-def generae_user_id() -> str:
-    return f"{secrets.randbelow(10**6):06d}"
+
+def generate_id() -> str:
+    return uuid.uuid4().hex
 
 
 class AuthService:
@@ -40,11 +43,13 @@ class AuthService:
 
         if existing_user:
             if existing_user.email == data.email:
+                logger.info("Account availability conflict: email is already registered")
                 return AvailabilityResponse(
                     is_available=False,
                     detail="This email is already registered.",
                     conflict_field="email",
                 )
+            logger.info("Account availability conflict: phone is already registered")
             return AvailabilityResponse(
                 is_available=False,
                 detail="This phone number is already registered.",
@@ -86,7 +91,7 @@ class AuthService:
 
         # 3. Create User
         new_user = AppUser(
-            id=generae_user_id(),
+            id=generate_id(),
             firstName=data.firstName,
             lastName=data.lastName,
             email=data.email,
@@ -98,7 +103,7 @@ class AuthService:
 
         db.add(new_user)
         try:
-            db.commit()
+            db.flush()
             db.refresh(new_user)
         except IntegrityError:
             db.rollback()
@@ -106,11 +111,29 @@ class AuthService:
                 db, AvailabilityCheckRequest(email=data.email, phone=data.phone)
             )
             if not availability.is_available:
+                logger.warning(
+                    "Signup blocked by a database uniqueness conflict: field=%s",
+                    availability.conflict_field,
+                )
                 cls._raise_availability_error(availability)
-            raise
+            logger.error("Signup database insert failed with an integrity error")
+            raise AppError(
+                "SIGNUP_FAILED",
+                status.HTTP_500_INTERNAL_SERVER_ERROR,
+                "Unable to create the account right now.",
+            ) from None
+        except Exception as exc:
+            db.rollback()
+            logger.error("Signup database insert failed (%s)", type(exc).__name__)
+            raise AppError(
+                "SIGNUP_FAILED",
+                status.HTTP_500_INTERNAL_SERVER_ERROR,
+                "Unable to create the account right now.",
+            ) from None
 
         # 4. Log the user in immediately upon successful registration
-        return cls._create_or_rotate_session(db, new_user, ip_address, device_info)
+        logger.info("Signup user record staged; creating authentication session")
+        return cls.create_or_rotate_session(db, new_user, ip_address, device_info)
 
     @classmethod
     def login(
@@ -127,13 +150,14 @@ class AuthService:
             user = db.query(AppUser).filter(AppUser.phone == data.phone).first()
 
         if not user or not user.passwordHash or not verify_password(data.password, user.passwordHash):
+            logger.warning("Login rejected: credentials did not match")
             raise AppError(
                 "INVALID_CREDENTIALS",
                 status.HTTP_401_UNAUTHORIZED,
                 "Invalid credentials provided.",
             )
 
-        return cls._create_or_rotate_session(
+        return cls.create_or_rotate_session(
             db=db,
             user=user,
             ip_address=ip_address,
@@ -141,7 +165,7 @@ class AuthService:
         )
 
     @staticmethod
-    def _create_or_rotate_session(
+    def create_or_rotate_session(
         db: DBSession,
         user: AppUser,
         ip_address: Optional[str] = None,
@@ -171,7 +195,7 @@ class AuthService:
                 existing_session.device_info = device_info
         else:
             new_session = UserSession(
-                id=generae_user_id(),
+                id=generate_id(),
                 user_id=user.id,
                 refresh_token=new_refresh_token,
                 device_info=device_info,
@@ -181,15 +205,24 @@ class AuthService:
             )
             db.add(new_session)
 
-        db.commit()
-
-        return TokenResponse(
+        response = TokenResponse(
             access_token=access_token,
             refresh_token=new_refresh_token,
-            token_type="bearer",
-            user_id=user.id,
-            role=role_value,
+            user=user,
         )
+        try:
+            db.commit()
+        except Exception as exc:
+            db.rollback()
+            logger.error("Authentication session persistence failed (%s)", type(exc).__name__)
+            raise AppError(
+                "SESSION_PERSISTENCE_FAILED",
+                status.HTTP_500_INTERNAL_SERVER_ERROR,
+                "Unable to create the authentication session right now.",
+            ) from None
+
+        logger.info("Authentication session created or rotated")
+        return response
 
     @classmethod
     def rotate_refresh_token(
@@ -206,6 +239,7 @@ class AuthService:
         )
 
         if not session or session.is_revoked:
+            logger.warning("Refresh rejected: token is missing or revoked")
             raise AppError(
                 "INVALID_REFRESH_TOKEN",
                 status.HTTP_401_UNAUTHORIZED,
@@ -214,6 +248,7 @@ class AuthService:
 
         current_time = datetime.utcnow()
         if session.expires_at < current_time:
+            logger.warning("Refresh rejected: token has expired")
             raise AppError(
                 "REFRESH_TOKEN_EXPIRED",
                 status.HTTP_401_UNAUTHORIZED,
@@ -222,13 +257,14 @@ class AuthService:
 
         user = db.query(AppUser).filter(AppUser.id == session.user_id).first()
         if not user:
+            logger.error("Refresh failed: session references a missing user")
             raise AppError(
                 "USER_NOT_FOUND",
                 status.HTTP_404_NOT_FOUND,
                 "Your account could not be found.",
             )
 
-        return cls._create_or_rotate_session(
+        return cls.create_or_rotate_session(
             db=db,
             user=user,
             ip_address=ip_address,

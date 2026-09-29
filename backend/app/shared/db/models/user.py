@@ -1,6 +1,6 @@
 from datetime import datetime
 
-from sqlalchemy import Boolean, DateTime, Enum, String
+from sqlalchemy import Boolean, DateTime, Enum, String, UniqueConstraint
 from sqlalchemy.orm import Mapped, mapped_column, relationship
 
 from app.shared.db.config.base import Base
@@ -9,6 +9,7 @@ from app.shared.db.enums.role import Role
 
 class AppUser(Base):
     __tablename__ = "app_users"
+    __table_args__ = (UniqueConstraint("phone", name="uq_app_users_phone"),)
 
     id: Mapped[str] = mapped_column(String, primary_key=True)
     email: Mapped[str] = mapped_column(String, unique=True, nullable=False)

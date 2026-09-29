@@ -1,4 +1,5 @@
 from contextlib import asynccontextmanager
+import logging
 from fastapi import FastAPI, Request
 from fastapi.middleware.cors import CORSMiddleware
 from fastapi.exceptions import RequestValidationError
@@ -10,6 +11,8 @@ from app.core.database import init_db
 from app.core.exceptions import AppError
 from app.core.firebase import init_firebase
 from app.services.auth.routes import router as auth_router
+
+logger = logging.getLogger(__name__)
 
 
 @asynccontextmanager
@@ -38,6 +41,16 @@ async def request_validation_error_handler(
     request: Request,
     exc: RequestValidationError,
 ) -> JSONResponse:
+    error_summary = "; ".join(
+        f"{'.'.join(str(part) for part in error.get('loc', ()))} ({error.get('type', 'unknown')})"
+        for error in exc.errors()
+    )
+    logger.warning(
+        "Request validation failed for %s %s: %s",
+        request.method,
+        request.url.path,
+        error_summary,
+    )
     return await app_error_handler(
         request,
         AppError(

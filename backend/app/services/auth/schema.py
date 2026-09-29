@@ -1,6 +1,16 @@
 from typing import Literal, Optional
-from pydantic import AliasChoices, BaseModel, ConfigDict, EmailStr, Field, model_validator
+
+from pydantic import (
+    AliasChoices,
+    BaseModel,
+    ConfigDict,
+    EmailStr,
+    Field,
+    field_validator,
+    model_validator,
+)
 from app.shared.db.enums.role import Role
+from app.shared.utils.phone import normalize_us_phone
 
 
 class SignupRequest(BaseModel):
@@ -14,13 +24,18 @@ class SignupRequest(BaseModel):
         validation_alias=AliasChoices("firebaseIdToken", "firebase_id_token")
     )
 
+    @field_validator("phone", mode="before")
+    @classmethod
+    def normalize_phone(cls, value: object) -> str:
+        return normalize_us_phone(value)
+
 
 class UserResponse(BaseModel):
     model_config = ConfigDict(from_attributes=True)
 
     id: str
-    firstName: str = Field(validation_alias=AliasChoices("firstName", "firstName"))
-    lastName: str = Field(validation_alias=AliasChoices("lastName", "lastName"))
+    firstName: str
+    lastName: str
     email: str
     phone: Optional[str] = None
     role: Role = Field(validation_alias=AliasChoices("role", "userRole"))
@@ -29,6 +44,11 @@ class UserResponse(BaseModel):
 class AvailabilityCheckRequest(BaseModel):
     email: EmailStr
     phone: str
+
+    @field_validator("phone", mode="before")
+    @classmethod
+    def normalize_phone(cls, value: object) -> str:
+        return normalize_us_phone(value)
 
 
 class AvailabilityResponse(BaseModel):
@@ -56,6 +76,4 @@ class RefreshTokenRequest(BaseModel):
 class TokenResponse(BaseModel):
     access_token: str
     refresh_token: str
-    token_type: str = "bearer"
-    user_id: str
-    role: str
+    user: UserResponse
