@@ -30,7 +30,7 @@ export async function createProperty(
     pincode: property.pincode.trim(),
   };
 
-  return request<CreatePropertyResponse>('/v1/properties', {
+  return request<CreatePropertyResponse>('/v1/add-properties', {
     method: 'POST',
     token: accessToken,
     body,

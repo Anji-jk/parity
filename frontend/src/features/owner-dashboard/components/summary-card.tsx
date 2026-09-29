@@ -11,19 +11,28 @@ export function SummaryCard({ item }: Props) {
 
   return (
     <View style={[styles.card, item.tone === 'green' && styles.selected]}>
-      <AppIcon icon={item.icon} size={31} color={tone} />
-      <View style={styles.copy}>
+      <View style={styles.topRow}>
+        <AppIcon icon={item.icon} size={31} color={tone} />
         <AppText style={styles.value} color={colors.textDark}>{item.value}</AppText>
-        <AppText style={styles.label} color={tone}>{item.label}</AppText>
       </View>
+      <AppText style={styles.label} color={tone}>{item.label}</AppText>
     </View>
   );
 }
 
 const styles = StyleSheet.create({
-  card: { flex: 1, minHeight: 94, paddingHorizontal: 11, paddingVertical: 14, borderRadius: 15, borderWidth: 1, borderColor: '#E3E7E3', backgroundColor: 'rgba(255,255,255,0.64)', justifyContent: 'center', gap: 7 },
+  card: {
+    flex: 1,
+    aspectRatio: 1,
+    padding: 14,
+    borderRadius: 15,
+    borderWidth: 1,
+    borderColor: '#E3E7E3',
+    backgroundColor: 'rgba(255,255,255,0.64)',
+    justifyContent: 'space-between',
+  },
   selected: { borderColor: '#B5CCB8', backgroundColor: '#F1F7F0' },
-  copy: { gap: 1 },
+  topRow: { flexDirection: 'row', alignItems: 'center', gap: 8 },
   value: { fontFamily: fontFamily.semiBold, fontSize: 22, lineHeight: 26 },
-  label: { fontFamily: fontFamily.regular, fontSize: 12, lineHeight: 17 },
+  label: { fontFamily: fontFamily.regular, fontSize: 12, lineHeight: 17},
 });

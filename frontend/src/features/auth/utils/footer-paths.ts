@@ -16,9 +16,15 @@ export function signupFooterPath(w: number, h: number): string {
 export function verifyFooterPath(w: number, h: number): string {
   const { x, y } = at(w, h);
   return [
-    `M ${x(0)} ${y(0.6)}`,
-    `C ${x(0.2)} ${y(0.5)} ${x(0.3)} ${y(0.36)} ${x(0.45)} ${y(0.3)}`,
-    `C ${x(0.65)} ${y(0.2)} ${x(0.85)} ${y(0.14)} ${x(1)} ${y(0.12)}`,
+    // 1. Start on the left edge, slightly above the trough
+    `M ${x(0)} ${y(0.425)}`,
+    // 2. Dip down and flatten into a wide, shallow trough (bottom near x ≈ 0.18)
+    `C ${x(0.05)} ${y(0.455)} ${x(0.11)} ${y(0.471)} ${x(0.184)} ${y(0.471)}`,
+    // 3. Long, smooth S-curve rising from the trough to a soft crest (x ≈ 0.83)
+    `C ${x(0.40)} ${y(0.471)} ${x(0.62)} ${y(0.388)} ${x(0.828)} ${y(0.388)}`,
+    // 4. Gentle roll-off from the crest down to the right edge
+    `C ${x(0.90)} ${y(0.388)} ${x(0.96)} ${y(0.405)} ${x(1)} ${y(0.43)}`,
+    // 5. Close around the bottom border
     `L ${x(1)} ${y(1)} L ${x(0)} ${y(1)} Z`,
   ].join(' ');
 }

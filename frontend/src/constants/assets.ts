@@ -17,6 +17,7 @@ export const images = {
   auth: {
     plantBottom: require('../../assets/images/auth/plant_bottom.png'),
     roomSoft: require('../../assets/images/auth/room_soft.png'),
+    roomBed: require('../../assets/images/auth/room_bed.png'),
   },
   decor: {
     leavesTop: require('../../assets/images/decor/leaves_top.png'),

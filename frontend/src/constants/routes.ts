@@ -11,4 +11,6 @@ export const routes = {
   joinProperty: '/join-property',
   allSet: '/all-set',
   home: '/home',
+  workerDashboard: '/worker-dashboard',
+  workerPropertyDetails: '/worker-property-details',
 } as const;

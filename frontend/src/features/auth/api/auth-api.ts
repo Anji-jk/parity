@@ -1,7 +1,7 @@
 import { env } from '@/config/env';
 import { request } from '@/services/http/http-client';
 import type { AuthApi, OtpSessionResponse, UserRole, VerifyOtpResponse } from '../types/auth-types';
-// import { mockAuthApi } from './auth-api.mock';
+import { mockAuthApi } from './auth-api.mock';
 
 // type BackendLoginResponse = {
 //   access_token: string;
@@ -46,4 +46,4 @@ const realAuthApi: AuthApi = {
 };
 
 
-export const authApi: AuthApi = realAuthApi;
+export const authApi: AuthApi = env.useMockApi ? mockAuthApi : realAuthApi;

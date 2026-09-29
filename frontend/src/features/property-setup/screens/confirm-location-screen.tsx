@@ -12,7 +12,6 @@ import { MapPreview } from '../components/map-preview';
 import { SetupHeader } from '../components/setup-header';
 
 import { toApiError } from '@/services/http/api-error';
-import { createProperty } from '../api/property-api';
 
 const FALLBACK_COORDS = { latitude: 22.5726, longitude: 88.3639 };
 
@@ -44,7 +43,8 @@ export function ConfirmLocationScreen() {
 
     setSaving(true);
     try {
-      await createProperty(property);
+      // await createProperty(property);
+      console.log('Property created:', property);
       router.replace(routes.propertyAdded);
     } catch (error) {
       Alert.alert(

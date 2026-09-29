@@ -8,7 +8,15 @@ import { colors, fontFamily } from '@/theme';
 export function DashboardHeader() {
   return (
     <View style={styles.header}>
-      <Image source={images.brand.logoWordmark} style={styles.logo} resizeMode="contain" />
+      <View style={styles.brand}>
+        <View style={styles.brandRow}>
+          <Image source={images.brand.logo} style={styles.logo} resizeMode="contain" />
+          <AppText variant="heading" color={colors.primary} style={styles.brandText}>parity</AppText>
+        </View>
+        <AppText variant="subtitle" color={colors.accent} style={styles.tagline}>
+          CLEAN SPACES HIGHER STANDARDS
+        </AppText>
+      </View>
       <View style={styles.actions}>
         <Pressable style={styles.notification} accessibilityRole="button" accessibilityLabel="Notifications">
           <Ionicons name="notifications-outline" size={25} color={colors.primary} />
@@ -28,7 +36,11 @@ function TextInitials() {
 
 const styles = StyleSheet.create({
   header: { flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between' },
-  logo: { width: 184, height: 58, alignSelf: 'flex-start' },
+  brand: { flexShrink: 1, alignItems: 'flex-start' },
+  brandRow: { flexDirection: 'row', alignItems: 'center' },
+  logo: { width: 84, height: 60, alignSelf: 'flex-start', top: 2, right: 20 },
+  brandText: { fontSize: 34, right: 30, bottom: 2 },
+  tagline: { marginTop: -4, fontSize: 8, lineHeight: 14, letterSpacing: 2.5 },
   actions: { flexDirection: 'row', alignItems: 'center', gap: 14 },
   notification: {
     width: 48,

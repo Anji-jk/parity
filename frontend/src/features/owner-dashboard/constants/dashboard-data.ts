@@ -9,7 +9,7 @@ const propertyStats = {
 
 export const dashboardSummary: DashboardSummary[] = [
   { label: 'Total Properties', value: 3, icon: { family: 'ionicons', name: 'business-outline' }, tone: 'green' },
-  { label: 'Verified', value: 2, icon: { family: 'ionicons', name: 'checkmark-circle-outline' }, tone: 'neutral' },
+  { label: 'Verified Properties', value: 2, icon: { family: 'ionicons', name: 'checkmark-circle-outline' }, tone: 'neutral' },
   { label: 'Requires Verification', value: 1, icon: { family: 'ionicons', name: 'time-outline' }, tone: 'amber' },
 ];
 

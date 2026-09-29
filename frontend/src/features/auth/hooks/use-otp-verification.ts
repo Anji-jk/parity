@@ -8,6 +8,8 @@ import { tokenStorage } from '@/services/storage/token-storage';
 import { authApi } from '../api/auth-api';
 import { confirmPhoneVerification, resendPhoneVerification } from '../api/firebase-signup-auth';
 import { OTP_LENGTH } from '../constants/auth-config';
+import { getCountry } from '../constants/countries';
+import { toE164 } from '../utils/phone';
 
 import { useRegistration } from '@/state/auth/signup-context';
 import type { RegisterPayload } from '../types/auth-types';
@@ -51,7 +53,7 @@ export function useOtpVerification({ requestId, expiresInSec, resendInSec }: Par
           firstName: registrationDraft.firstName,
           lastName: registrationDraft.lastName,
           email: registrationDraft.email,
-          phone: registrationDraft.phone,
+          phone: toE164(getCountry(registrationDraft.countryIso),registrationDraft.phone),
           password: registrationDraft.password,
           role: registrationDraft.role,
           ...(registrationDraft.propertyCode
@@ -71,8 +73,7 @@ export function useOtpVerification({ requestId, expiresInSec, resendInSec }: Par
       if (registrationDraft.role === 'owner') {
         router.replace(routes.addProperty);
       } else {
-        // router.replace(routes.workerDashboard);
-        router.replace(routes.home);
+        router.replace(routes.workerDashboard);
       }
 
       resetRegistration();
