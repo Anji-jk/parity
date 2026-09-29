@@ -52,6 +52,19 @@ class AuthService:
             )
 
         return AvailabilityResponse(is_available=True)
+    
+    @classmethod
+    def logout(cls, db: DBSession, data: RefreshTokenRequest) -> None:
+        session = (
+            db.query(UserSession)
+            .filter(UserSession.refresh_token == data.refresh_token)
+            .first()
+        )
+        
+        # If the session exists, mark it as revoked to invalidate it
+        if session:
+            session.is_revoked = True
+            db.commit()
 
     @classmethod
     def register(
@@ -192,11 +205,11 @@ class AuthService:
             .first()
         )
 
-        if not session:
+        if not session or session.is_revoked:
             raise AppError(
                 "INVALID_REFRESH_TOKEN",
                 status.HTTP_401_UNAUTHORIZED,
-                "Invalid refresh token.",
+                "Invalid or revoked refresh token.",
             )
 
         current_time = datetime.utcnow()

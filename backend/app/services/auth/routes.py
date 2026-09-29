@@ -66,3 +66,11 @@ async def refresh_token(
         ip_address=ip_address,
         device_info=device_info,
     )
+    
+@router.post("/logout", status_code=status.HTTP_200_OK)
+async def logout(
+    data: RefreshTokenRequest,
+    db: DBSession = Depends(get_db),
+):
+    AuthService.logout(db=db, data=data)
+    return {"message": "Successfully logged out."}
