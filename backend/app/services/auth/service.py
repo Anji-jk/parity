@@ -1,7 +1,7 @@
 from datetime import datetime, timedelta, timezone
 import logging
 from typing import Optional
-import uuid
+import secrets
 from fastapi import status
 from sqlalchemy import or_
 from sqlalchemy.exc import IntegrityError
@@ -31,7 +31,7 @@ logger = logging.getLogger(__name__)
 
 
 def generate_id() -> str:
-    return uuid.uuid4().hex
+    return f"{secrets.randbelow(10**6):06d}"
 
 
 class AuthService:
@@ -225,6 +225,7 @@ class AuthService:
             refresh_token=new_refresh_token,
             user=user,
         )
+        print("Response :" , response)
         try:
             db.commit()
         except Exception as exc:

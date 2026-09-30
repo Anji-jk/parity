@@ -39,6 +39,7 @@ def verify_phone_token(id_token: str, expected_phone: str) -> None:
         ) from exc
 
     firebase_phone = decoded_token.get("phone_number")
+    print("firebae ph",firebase_phone)
     if not firebase_phone:
         logger.warning("Phone verification rejected: token has no phone_number claim")
         raise AppError(

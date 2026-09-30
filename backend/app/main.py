@@ -11,6 +11,7 @@ from app.core.database import init_db
 from app.core.exceptions import AppError
 from app.core.firebase import init_firebase
 from app.services.auth.routes import router as auth_router
+from app.services.properties.routes import router as property_router
 
 logger = logging.getLogger(__name__)
 
@@ -73,3 +74,4 @@ app.add_middleware(
 API_PREFIX = "/v1"
 
 app.include_router(auth_router, prefix=API_PREFIX)
+app.include_router(property_router, prefix=API_PREFIX)
