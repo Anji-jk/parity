@@ -1,0 +1,36 @@
+{
+    "image_shape": [
+        1293,
+        1724
+    ],
+    "brightness": 126.23,
+    "objects": [],
+    "room_name": "Bathroom",
+    "bulb_count": 2,
+    "bulbs": [
+        {
+            "id": 1,
+            "confidence": 0.8738,
+            "label": "bulb",
+            "bbox": [
+                359,
+                373,
+                479,
+                478
+            ],
+            "contour_area": 8294.5
+        },
+        {
+            "id": 2,
+            "confidence": 0.9872,
+            "label": "bulb",
+            "bbox": [
+                1322,
+                466,
+                1423,
+                552
+            ],
+            "contour_area": 5295.0
+        }
+    ]
+}

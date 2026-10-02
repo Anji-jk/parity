@@ -1,0 +1,54 @@
+{
+    "image_shape": [
+        2048,
+        921
+    ],
+    "brightness": 135.7,
+    "objects": [
+        {
+            "label": "laptop",
+            "bbox": [
+                731.83,
+                96.3,
+                920.23,
+                312.41
+            ],
+            "centroid": [
+                826,
+                204
+            ],
+            "confidence": 0.93
+        },
+        {
+            "label": "bed",
+            "bbox": [
+                0.14,
+                244.37,
+                921.0,
+                1705.85
+            ],
+            "centroid": [
+                460,
+                975
+            ],
+            "confidence": 0.9
+        },
+        {
+            "label": "bottle",
+            "bbox": [
+                628.7,
+                37.72,
+                686.9,
+                260.4
+            ],
+            "centroid": [
+                657,
+                149
+            ],
+            "confidence": 0.81
+        }
+    ],
+    "room_name": "bed",
+    "bulb_count": 0,
+    "bulbs": []
+}
