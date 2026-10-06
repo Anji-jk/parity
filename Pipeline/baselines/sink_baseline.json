@@ -64,5 +64,5 @@
     ],
     "room_name": "sink",
     "bulb_count": 0,
-    "bulbs": []
+    "bulb_detections": []
 }

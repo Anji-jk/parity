@@ -119,11 +119,11 @@
         }
     ],
     "room_name": "kitchen",
-    "bulb_count": 10,
-    "bulbs": [
+    "bulb_count": 5,
+    "bulb_detections": [
         {
             "id": 1,
-            "confidence": 0.4947,
+            "confidence": 0.7587,
             "label": "bulb",
             "bbox": [
                 2863,
@@ -135,19 +135,7 @@
         },
         {
             "id": 2,
-            "confidence": 0.7971,
-            "label": "bulb",
-            "bbox": [
-                1377,
-                1292,
-                1453,
-                1363
-            ],
-            "contour_area": 972.5
-        },
-        {
-            "id": 3,
-            "confidence": 0.5067,
+            "confidence": 0.5142,
             "label": "bulb",
             "bbox": [
                 2792,
@@ -158,20 +146,8 @@
             "contour_area": 674.5
         },
         {
-            "id": 4,
-            "confidence": 0.9352,
-            "label": "bulb",
-            "bbox": [
-                1354,
-                1329,
-                1403,
-                1366
-            ],
-            "contour_area": 328.0
-        },
-        {
-            "id": 5,
-            "confidence": 0.648,
+            "id": 3,
+            "confidence": 0.6788,
             "label": "bulb",
             "bbox": [
                 2831,
@@ -182,44 +158,8 @@
             "contour_area": 167.0
         },
         {
-            "id": 6,
-            "confidence": 0.6548,
-            "label": "bulb",
-            "bbox": [
-                2000,
-                792,
-                2077,
-                806
-            ],
-            "contour_area": 70.0
-        },
-        {
-            "id": 7,
-            "confidence": 0.847,
-            "label": "bulb",
-            "bbox": [
-                2866,
-                712,
-                2908,
-                734
-            ],
-            "contour_area": 70.0
-        },
-        {
-            "id": 8,
-            "confidence": 0.6748,
-            "label": "bulb",
-            "bbox": [
-                1890,
-                622,
-                1939,
-                635
-            ],
-            "contour_area": 44.0
-        },
-        {
-            "id": 9,
-            "confidence": 0.8883,
+            "id": 4,
+            "confidence": 0.75,
             "label": "bulb",
             "bbox": [
                 1363,
@@ -230,8 +170,8 @@
             "contour_area": 35.0
         },
         {
-            "id": 10,
-            "confidence": 0.8196,
+            "id": 5,
+            "confidence": 0.5392,
             "label": "bulb",
             "bbox": [
                 1626,

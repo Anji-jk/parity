@@ -49,6 +49,19 @@
         }
     ],
     "room_name": "bed",
-    "bulb_count": 0,
-    "bulbs": []
+    "bulb_count": 1,
+    "bulb_detections": [
+        {
+            "id": 1,
+            "confidence": 0.5018,
+            "label": "bulb",
+            "bbox": [
+                723,
+                569,
+                747,
+                584
+            ],
+            "contour_area": 32.0
+        }
+    ]
 }

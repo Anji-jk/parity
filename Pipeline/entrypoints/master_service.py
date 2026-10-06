@@ -20,7 +20,7 @@ from Pipeline.config import MASTER_DIR, BASELINES_DIR, VALID_EXTENSIONS
 # Global Engine Cache (Avoids re-loading CLIP & YOLO weights on every request)
 # ---------------------------------------------------------------------------
 _BULB_ENGINE: BulbDetector | None = None
-_YOLO_MODEL = None
+_YOLO_MODEL = load_yolo("yolov8l.pt")
 
 
 def get_engines() -> tuple[BulbDetector, any]:
@@ -83,7 +83,7 @@ def process_master_image(
     bulb_res = bulb_engine.detect_bulbs(img)
     data["room_name"] = room_name
     data["bulb_count"] = bulb_res.get("count", 0)
-    data["bulbs"] = bulb_res.get("detections", [])
+    data["bulb_detections"] = bulb_res.get("detections", [])
 
     # 4. Save local baseline artifacts
     ref_out_path = os.path.join(output_baseline_dir, f"{room_name}_ref.jpg")

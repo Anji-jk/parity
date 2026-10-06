@@ -36,5 +36,5 @@
     ],
     "room_name": "shoes",
     "bulb_count": 0,
-    "bulbs": []
+    "bulb_detections": []
 }

@@ -7,30 +7,30 @@
     "objects": [],
     "room_name": "Bathroom",
     "bulb_count": 2,
-    "bulbs": [
+    "bulb_detections": [
         {
             "id": 1,
-            "confidence": 0.8738,
+            "confidence": 1.0137,
             "label": "bulb",
             "bbox": [
-                359,
-                373,
-                479,
-                478
+                358,
+                372,
+                481,
+                479
             ],
-            "contour_area": 8294.5
+            "contour_area": 8772.0
         },
         {
             "id": 2,
-            "confidence": 0.9872,
+            "confidence": 1.0224,
             "label": "bulb",
             "bbox": [
-                1322,
-                466,
-                1423,
-                552
+                1320,
+                465,
+                1425,
+                553
             ],
-            "contour_area": 5295.0
+            "contour_area": 5686.5
         }
     ]
 }

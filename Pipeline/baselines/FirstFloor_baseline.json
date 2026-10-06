@@ -273,11 +273,11 @@
         }
     ],
     "room_name": "FirstFloor",
-    "bulb_count": 14,
-    "bulbs": [
+    "bulb_count": 13,
+    "bulb_detections": [
         {
             "id": 1,
-            "confidence": 0.9776,
+            "confidence": 1.0271,
             "label": "bulb",
             "bbox": [
                 1244,
@@ -289,19 +289,7 @@
         },
         {
             "id": 2,
-            "confidence": 0.9923,
-            "label": "bulb",
-            "bbox": [
-                1114,
-                794,
-                1258,
-                878
-            ],
-            "contour_area": 8012.0
-        },
-        {
-            "id": 3,
-            "confidence": 0.9999,
+            "confidence": 1.0282,
             "label": "bulb",
             "bbox": [
                 16,
@@ -312,8 +300,8 @@
             "contour_area": 6946.5
         },
         {
-            "id": 4,
-            "confidence": 0.9996,
+            "id": 3,
+            "confidence": 1.038,
             "label": "bulb",
             "bbox": [
                 1371,
@@ -324,8 +312,8 @@
             "contour_area": 1498.5
         },
         {
-            "id": 5,
-            "confidence": 0.9798,
+            "id": 4,
+            "confidence": 1.0198,
             "label": "bulb",
             "bbox": [
                 273,
@@ -336,8 +324,8 @@
             "contour_area": 554.0
         },
         {
-            "id": 6,
-            "confidence": 0.9766,
+            "id": 5,
+            "confidence": 1.0064,
             "label": "bulb",
             "bbox": [
                 774,
@@ -348,8 +336,8 @@
             "contour_area": 550.5
         },
         {
-            "id": 7,
-            "confidence": 0.9987,
+            "id": 6,
+            "confidence": 0.9436,
             "label": "bulb",
             "bbox": [
                 1089,
@@ -360,8 +348,8 @@
             "contour_area": 342.5
         },
         {
-            "id": 8,
-            "confidence": 0.9285,
+            "id": 7,
+            "confidence": 1.037,
             "label": "bulb",
             "bbox": [
                 1058,
@@ -372,8 +360,8 @@
             "contour_area": 335.0
         },
         {
-            "id": 9,
-            "confidence": 0.9663,
+            "id": 8,
+            "confidence": 1.0237,
             "label": "bulb",
             "bbox": [
                 1145,
@@ -384,8 +372,8 @@
             "contour_area": 122.0
         },
         {
-            "id": 10,
-            "confidence": 0.951,
+            "id": 9,
+            "confidence": 1.0147,
             "label": "bulb",
             "bbox": [
                 887,
@@ -396,8 +384,8 @@
             "contour_area": 68.5
         },
         {
-            "id": 11,
-            "confidence": 0.8342,
+            "id": 10,
+            "confidence": 0.9834,
             "label": "bulb",
             "bbox": [
                 304,
@@ -408,8 +396,8 @@
             "contour_area": 56.0
         },
         {
-            "id": 12,
-            "confidence": 0.8069,
+            "id": 11,
+            "confidence": 0.9909,
             "label": "bulb",
             "bbox": [
                 523,
@@ -420,8 +408,8 @@
             "contour_area": 46.5
         },
         {
-            "id": 13,
-            "confidence": 0.9431,
+            "id": 12,
+            "confidence": 0.9448,
             "label": "bulb",
             "bbox": [
                 732,
@@ -432,8 +420,8 @@
             "contour_area": 9.0
         },
         {
-            "id": 14,
-            "confidence": 0.9789,
+            "id": 13,
+            "confidence": 0.9824,
             "label": "bulb",
             "bbox": [
                 1170,

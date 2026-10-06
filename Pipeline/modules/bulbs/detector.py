@@ -1,30 +1,28 @@
 import cv2
 import numpy as np
-
-# Updated relative/package imports:
-from Pipeline.modules.bulbs.state_analyzer import (
-    detect_bulb_candidates,
-    get_luminosity,
-    scene_brightness,
-)
+from Pipeline.modules.bulbs.state_analyzer import detect_bulb_candidates, get_luminosity, scene_brightness
 from Pipeline.modules.bulbs.vlm_classifier import VLMClassifier
 
 
+def _grow(box, w, h, min_side):
+    """Grow a box symmetrically around its centre to at least min_side."""
+    x1, y1, x2, y2 = [int(v) for v in box]
+    cx, cy = (x1 + x2) // 2, (y1 + y2) // 2
+    hw = max((x2 - x1) // 2, min_side // 2)
+    hh = max((y2 - y1) // 2, min_side // 2)
+    return max(0, cx - hw), max(0, cy - hh), min(w, cx + hw), min(h, cy + hh)
+
+
 class BulbDetector:
-    def __init__(self, model_id: str = "openai/clip-vit-large-patch14-336"):
+    def __init__(self, model_id: str = "hf-hub:apple/MobileCLIP-B-OpenCLIP"):
         self.vlm = VLMClassifier(model_id=model_id)
 
-    def detect_bulbs(
-        self,
-        frame: np.ndarray,
-        threshold_value: int | None = None,
-        min_area: int | None = None,
-        pad_pixels: int = 45,
-        debug: bool = False,
-    ) -> dict:
+    def detect_bulbs(self, frame, threshold_value=None, min_area=None,
+                     pad_pixels: int = 45, debug: bool = False) -> dict:
         """
-        Executes candidate extraction + zero-shot CLIP classification.
-        Adapts to night / day scenes via a continuous brightness factor t.
+        Candidate extraction + zero-shot CLIP verification.
+        With debug=True the result also contains `debug_frame`: accepted boxes in
+        green, rejected candidates in red with the stage and reason that dropped them.
         """
         if frame is None or frame.size == 0:
             raise ValueError("Input frame passed to BulbDetector is None or empty.")
@@ -33,117 +31,89 @@ class BulbDetector:
         h, w = frame.shape[:2]
         safe_pad = 45 if pad_pixels is None else int(pad_pixels)
 
-        # Scene brightness: 0 = night, 1 = bright indoor/day
         t = scene_brightness(get_luminosity(frame))
         safe_pad = int(round(safe_pad * (1 - 0.55 * t)))
 
-        # 1. Candidate extraction
+        rejected = [] if debug else None
         candidates = detect_bulb_candidates(
-            frame,
-            threshold_value=threshold_value,
-            min_area=min_area,
-            pad_pixels=safe_pad,
-            debug=debug,
+            frame, threshold_value=threshold_value, min_area=min_area,
+            pad_pixels=safe_pad, debug=debug, rejected=rejected,
         )
 
-        annotated_frame = frame.copy()
+        annotated = frame.copy()
+        dbg = frame.copy() if debug else None
+
+        def finish(dets):
+            if debug:
+                for r in rejected:
+                    x1, y1, x2, y2 = r["draw_bbox"]
+                    cv2.rectangle(dbg, (x1, y1), (x2, y2), (0, 0, 255), 1)
+                    cv2.putText(dbg, r["reason"], (x1, max(10, y1 - 3)),
+                                cv2.FONT_HERSHEY_SIMPLEX, 0.35, (0, 0, 255), 1, cv2.LINE_AA)
+            out = {"detected": len(dets) > 0, "count": len(dets),
+                   "detections": dets, "annotated_frame": annotated}
+            if debug:
+                out["debug_frame"] = dbg
+            return out
 
         if not candidates:
-            return {
-                "detected": False,
-                "count": 0,
-                "detections": [],
-                "annotated_frame": annotated_frame,
-            }
+            return finish([])
 
-        # 2. Extract valid image crops (Using padded bbox for VLM)
-        MIN_CROP = 80   # minimum context window in pixels
-        valid_candidates, crops = [], []
+        # Two crops per candidate: context (padded) and tight (the blob itself)
+        MIN_CTX, MIN_TIGHT = 80, 32
+        valid, ctx_crops, tight_crops = [], [], []
         for cand in candidates:
-            x1, y1, x2, y2 = [int(v) for v in cand["bbox"]]
+            cx1, cy1, cx2, cy2 = _grow(cand["bbox"], w, h, MIN_CTX)
+            tx1, ty1, tx2, ty2 = _grow(cand.get("draw_bbox", cand["bbox"]), w, h, MIN_TIGHT)
+            ctx = frame[cy1:cy2, cx1:cx2]
+            tight = frame[ty1:ty2, tx1:tx2]
+            if min(ctx.shape[:2]) > 2 and min(tight.shape[:2]) > 2:
+                valid.append(cand)
+                ctx_crops.append(ctx)
+                tight_crops.append(tight)
 
-            # grow small boxes symmetrically around their centre
-            cx, cy = (x1 + x2) // 2, (y1 + y2) // 2
-            half_w = max((x2 - x1) // 2, MIN_CROP // 2)
-            half_h = max((y2 - y1) // 2, MIN_CROP // 2)
-            x1, x2 = max(0, cx - half_w), min(w, cx + half_w)
-            y1, y2 = max(0, cy - half_h), min(h, cy + half_h)
+        if not ctx_crops:
+            return finish([])
 
-            crop = frame[y1:y2, x1:x2]
-            if crop.size > 0 and crop.shape[0] > 2 and crop.shape[1] > 2:
-                cand["bbox"] = [x1, y1, x2, y2]
-                valid_candidates.append(cand)
-                crops.append(crop)
+        results = self.vlm.verify_crops_batch(
+            ctx_crops, scene_t=t, crops_tight=tight_crops,
+            skin_fracs=[c["skin_frac"] for c in valid],
+            halos=[c["halo"] for c in valid],
+        )
 
-        if not crops:
-            return {
-                "detected": False,
-                "count": 0,
-                "detections": [],
-                "annotated_frame": annotated_frame,
-            }
+        confirmed = []
+        for cand, (is_bulb, conf, label), det in zip(valid, results, self.vlm.last_details):
+            print(f"t={t:.2f} conf={conf:.2f} (need {det['required']:.2f}) "
+                  f"neg={det['best_neg_name']}:{det['best_neg']:.2f} "
+                  f"core={cand['core_frac']:.2f}/{cand['core_px']}px "
+                  f"contrast={cand['contrast']:.0f} halo={cand['halo']:.1f} "
+                  f"skin={cand['skin_frac']:.2f} mask={cand['mask']}")
+            dx1, dy1, dx2, dy2 = cand["draw_bbox"]
 
-        # 3. Batch VLM inference (scene-adaptive confidence)
-        vlm_results = self.vlm.verify_crops_batch(crops, scene_t=t)
-
-        # 4. Filter confirmed detections and annotate frame
-        confirmed_bulbs = []
-        bulb_idx = 1
-        for cand, (is_bulb, conf, label) in zip(valid_candidates, vlm_results):
             if not is_bulb:
+                if debug:
+                    rejected.append({
+                        "draw_bbox": cand["draw_bbox"],
+                        "reason": f"vlm {conf:.2f}/{det['required']:.2f} {det['best_neg_name']}",
+                    })
                 continue
 
-            # Retrieve the TIGHT bounding box for drawing
-            dx1, dy1, dx2, dy2 = cand.get("draw_bbox", cand["bbox"])
+            confirmed.append({
+                "id": len(confirmed) + 1,
+                "confidence": round(float(conf), 4),
+                "label": str(label),
+                "bbox": [dx1, dy1, dx2, dy2],
+                "contour_area": cand.get("area", 0.0),
+            })
 
-            confirmed_bulbs.append(
-                {
-                    "id": bulb_idx,
-                    "confidence": round(float(conf), 4),
-                    "label": str(label),
-                    "bbox": [dx1, dy1, dx2, dy2],
-                    "contour_area": cand.get("area", 0.0),
-                }
-            )
+            cv2.rectangle(annotated, (dx1, dy1), (dx2, dy2), (0, 255, 0), 2)
+            text = f"Bulb {min(conf, 1.0) * 100:.0f}%"
+            font, fs, th = cv2.FONT_HERSHEY_SIMPLEX, 0.45, 1
+            (tw, tth), base = cv2.getTextSize(text, font, fs, th)
+            ty = dy1 - 6 if dy1 - 6 > tth + 4 else dy1 + tth + 6
+            cv2.rectangle(annotated, (dx1, ty - tth - 2), (dx1 + tw + 2, ty + base - 1), (0, 180, 0), -1)
+            cv2.putText(annotated, text, (dx1 + 1, ty), font, fs, (0, 0, 0), th, cv2.LINE_AA)
+            if debug:
+                cv2.rectangle(dbg, (dx1, dy1), (dx2, dy2), (0, 255, 0), 2)
 
-            # Draw tight bounding box
-            cv2.rectangle(annotated_frame, (dx1, dy1), (dx2, dy2), (0, 255, 0), 2)
-
-            # Text label badge
-            text = f"Bulb {conf * 100:.0f}%"
-            font = cv2.FONT_HERSHEY_SIMPLEX
-            font_scale = 0.45
-            thickness = 1
-
-            (text_w, text_h), baseline = cv2.getTextSize(
-                text, font, font_scale, thickness
-            )
-            text_y = dy1 - 6 if dy1 - 6 > text_h + 4 else dy1 + text_h + 6
-
-            # Background rectangle behind text
-            cv2.rectangle(
-                annotated_frame,
-                (dx1, text_y - text_h - 2),
-                (dx1 + text_w + 2, text_y + baseline - 1),
-                (0, 180, 0),
-                -1,
-            )
-            cv2.putText(
-                annotated_frame,
-                text,
-                (dx1 + 1, text_y),
-                font,
-                font_scale,
-                (0, 0, 0),
-                thickness,
-                cv2.LINE_AA,
-            )
-
-            bulb_idx += 1
-
-        return {
-            "detected": len(confirmed_bulbs) > 0,
-            "count": len(confirmed_bulbs),
-            "detections": confirmed_bulbs,
-            "annotated_frame": annotated_frame,
-        }
+        return finish(confirmed)

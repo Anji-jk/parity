@@ -6,23 +6,11 @@
     "brightness": 93.83,
     "objects": [],
     "room_name": "Bathroom_Light",
-    "bulb_count": 4,
-    "bulbs": [
+    "bulb_count": 3,
+    "bulb_detections": [
         {
             "id": 1,
-            "confidence": 0.955,
-            "label": "bulb",
-            "bbox": [
-                96,
-                942,
-                257,
-                1083
-            ],
-            "contour_area": 14907.0
-        },
-        {
-            "id": 2,
-            "confidence": 0.9958,
+            "confidence": 1.0249,
             "label": "bulb",
             "bbox": [
                 413,
@@ -33,8 +21,8 @@
             "contour_area": 3670.0
         },
         {
-            "id": 3,
-            "confidence": 0.7614,
+            "id": 2,
+            "confidence": 0.7746,
             "label": "bulb",
             "bbox": [
                 1204,
@@ -45,8 +33,8 @@
             "contour_area": 1343.5
         },
         {
-            "id": 4,
-            "confidence": 0.9998,
+            "id": 3,
+            "confidence": 1.0147,
             "label": "bulb",
             "bbox": [
                 668,

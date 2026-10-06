@@ -22,5 +22,5 @@
     ],
     "room_name": "toilet",
     "bulb_count": 0,
-    "bulbs": []
+    "bulb_detections": []
 }
