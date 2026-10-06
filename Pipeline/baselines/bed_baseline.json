@@ -10,11 +10,11 @@
             "bbox": [
                 731.83,
                 96.3,
-                920.23,
+                920,
                 312.41
             ],
             "centroid": [
-                826,
+                825,
                 204
             ],
             "confidence": 0.93
@@ -24,7 +24,7 @@
             "bbox": [
                 0.14,
                 244.37,
-                921.0,
+                920,
                 1705.85
             ],
             "centroid": [
@@ -51,6 +51,20 @@
     "room_name": "bed",
     "bulb_count": 1,
     "bulb_detections": [
+        {
+            "id": 1,
+            "confidence": 0.5018,
+            "label": "bulb",
+            "bbox": [
+                723,
+                569,
+                747,
+                584
+            ],
+            "contour_area": 32.0
+        }
+    ],
+    "bulbs": [
         {
             "id": 1,
             "confidence": 0.5018,

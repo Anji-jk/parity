@@ -8,6 +8,13 @@ def run(ctx: PipelineContext) -> bool:
   """STEP 4: Delta Calculations (Inventory Missing, Drift, Clutter)."""
   master_objs = ctx.master_data.get("objects", [])
   current_objs = ctx.current_data.get("objects", []).copy()
+
+  # --- ADD THIS DEBUG PRINT ---
+  # print("\n[DEBUG OBJECT DELTA]")
+  # print(f"Master Objects Expected : {[o['label'] for o in master_objs]}")
+  # print(f"Current Objects Found   : {[o['label'] for o in current_objs]}")
+  # ----------------------------
+
   matched_master = []
   ctx.drift_alerts = []
 

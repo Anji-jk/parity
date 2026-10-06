@@ -32,7 +32,7 @@ def draw_discrepancy_annotations(ctx: PipelineContext) -> np.ndarray:
     """
     Paints all detected issues directly onto the image:
     1. Active bulbs in GREEN.
-    2. Expected bulbs that are TURNED OFF in RED.
+    2. Expected bulbs that are TURNED OFF in RED (with 4-corner perspective warp).
     3. An on-screen HUD badge listing all discrepancies.
     """
     canvas = (
@@ -47,7 +47,7 @@ def draw_discrepancy_annotations(ctx: PipelineContext) -> np.ndarray:
 
     # 1. Draw Active Bulbs in GREEN
     for bulb in ctx.bulb_detections:
-        bbox = bulb.get("bbox", [])
+        bbox = bulb.get("draw_bbox") or bulb.get("bbox", [])
         if len(bbox) == 4:
             x1, y1, x2, y2 = [int(v) for v in bbox]
             conf = bulb.get("confidence", 1.0)
@@ -64,9 +64,8 @@ def draw_discrepancy_annotations(ctx: PipelineContext) -> np.ndarray:
             )
 
     # 2. Draw Inactive Expected Bulbs in RED (if lights are off)
-    expected_bulbs = ctx.master_data.get("bulb_detections", [])
+    expected_bulbs = ctx.master_data.get("bulb_detections") or ctx.master_data.get("bulbs", [])
     if ctx.current_bulb_count < ctx.baseline_bulb_count and expected_bulbs:
-        # If homography matrix is available, warp baseline coordinates to current perspective
         H_inv = None
         if ctx.homography_matrix is not None:
             try:
@@ -78,18 +77,31 @@ def draw_discrepancy_annotations(ctx: PipelineContext) -> np.ndarray:
             m_box = m_bulb.get("bbox", [])
             if len(m_box) == 4:
                 bx1, by1, bx2, by2 = m_box
+                
+                # Transform all 4 bounding box corners through homography
                 if H_inv is not None:
-                    pts = np.float32([[[bx1, by1]], [[bx2, by2]]])
-                    warped = cv2.perspectiveTransform(pts, H_inv)
-                    rx1, ry1 = int(warped[0][0][0]), int(warped[0][0][1])
-                    rx2, ry2 = int(warped[1][0][0]), int(warped[1][0][1])
+                    corners = np.float32([
+                        [[bx1, by1]],
+                        [[bx2, by1]],
+                        [[bx2, by2]],
+                        [[bx1, by2]],
+                    ])
+                    warped = cv2.perspectiveTransform(corners, H_inv)
+                    rx1 = int(np.min(warped[:, 0, 0]))
+                    ry1 = int(np.min(warped[:, 0, 1]))
+                    rx2 = int(np.max(warped[:, 0, 0]))
+                    ry2 = int(np.max(warped[:, 0, 1]))
                 else:
                     rx1, ry1, rx2, ry2 = int(bx1), int(by1), int(bx2), int(by2)
 
                 rx1, ry1 = max(0, min(w - 1, rx1)), max(0, min(h - 1, ry1))
                 rx2, ry2 = max(0, min(w - 1, rx2)), max(0, min(h - 1, ry2))
 
-                # Draw dashed/bold red box indicating OFF light
+                # Skip degenerate transformed boxes
+                if rx2 <= rx1 or ry2 <= ry1:
+                    continue
+
+                # Draw bold red box indicating OFF light
                 cv2.rectangle(canvas, (rx1, ry1), (rx2, ry2), (0, 0, 255), 3)
                 label_txt = f"LIGHT OFF #{b_idx}"
                 (lw, lh), _ = cv2.getTextSize(label_txt, cv2.FONT_HERSHEY_SIMPLEX, 0.5, 2)
@@ -118,14 +130,12 @@ def draw_discrepancy_annotations(ctx: PipelineContext) -> np.ndarray:
         hud_items.append(f"CLUTTER: {clutter}")
 
     if hud_items:
-        # Draw translucent black badge behind text
-        badge_w = min(w - 20, 360)
+        badge_w = min(w - 20, 380)
         badge_h = 35 + len(hud_items) * 22
         overlay = canvas.copy()
         cv2.rectangle(overlay, (10, 10), (10 + badge_w, 10 + badge_h), (20, 20, 20), -1)
         cv2.addWeighted(overlay, 0.75, canvas, 0.25, 0, canvas)
 
-        # Header
         verdict_color = (0, 0, 255) if ctx.verdict == "REJECTED" else (0, 255, 0)
         cv2.putText(
             canvas,
@@ -138,7 +148,6 @@ def draw_discrepancy_annotations(ctx: PipelineContext) -> np.ndarray:
             cv2.LINE_AA,
         )
 
-        # Lines
         for idx, item in enumerate(hud_items):
             cv2.putText(
                 canvas,
@@ -155,14 +164,13 @@ def draw_discrepancy_annotations(ctx: PipelineContext) -> np.ndarray:
 
 
 def evaluate_worker_capture(
-    current_image_input: str | np.ndarray,
+    current_image_input: str | np.ndarray | bytes,
     room_name: str,
     baseline_dir: str = BASELINES_DIR,
     output_dir: str = OUTPUT_DIR,
 ) -> dict:
     runner, model = get_inference_engines()
 
-    # Load baseline JSON & reference image
     json_path = os.path.join(baseline_dir, f"{room_name}_baseline.json")
     ref_img_path = os.path.join(baseline_dir, f"{room_name}_ref.jpg")
 
@@ -174,18 +182,22 @@ def evaluate_worker_capture(
 
     master_img = cv2.imread(ref_img_path)
 
-    # Read current capture
+    # Handle path, raw bytes, or numpy array
     if isinstance(current_image_input, str):
         raw_current_img = cv2.imread(current_image_input)
         filename = os.path.basename(current_image_input)
         img_path = current_image_input
+    elif isinstance(current_image_input, bytes):
+        raw_current_img = cv2.imdecode(np.frombuffer(current_image_input, np.uint8), cv2.IMREAD_COLOR)
+        filename = f"{room_name}_capture.jpg"
+        img_path = "in_memory"
     else:
         raw_current_img = current_image_input
         filename = f"{room_name}_capture.jpg"
         img_path = "in_memory"
 
-    if raw_current_img is None:
-        raise ValueError(f"Could not load image from input: {current_image_input}")
+    if raw_current_img is None or raw_current_img.size == 0:
+        raise ValueError(f"Could not load valid image from input: {current_image_input}")
 
     # Build context
     ctx = PipelineContext(
@@ -201,7 +213,7 @@ def evaluate_worker_capture(
     # Run pipeline stages
     ctx = runner.run(ctx)
 
-    # Paint visual annotations (Red boxes on inactive lights + issue HUD)
+    # Paint visual annotations
     annotated_canvas = draw_discrepancy_annotations(ctx)
 
     os.makedirs(output_dir, exist_ok=True)
@@ -210,11 +222,14 @@ def evaluate_worker_capture(
     print(f"[SAVED] Inspection visual written to: {out_path}")
     print(f"[VERDICT] Status: {ctx.verdict}")
 
+    # Provide lighting_delta directly from ctx (fallback to brightness_diff if set)
+    l_delta = getattr(ctx, "lighting_delta", 0.0) or getattr(ctx, "brightness_diff", 0.0)
+
     return {
         "room_name": ctx.room_name,
         "verdict": ctx.verdict,
         "ssim_score": ctx.ssim_score,
-        "lighting_delta": ctx.lighting_delta,
+        "lighting_delta": l_delta,
         "active_bulbs": ctx.current_bulb_count,
         "expected_bulbs": ctx.baseline_bulb_count,
         "checklist": ctx.reset_checklist,

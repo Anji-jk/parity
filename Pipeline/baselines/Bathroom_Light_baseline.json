@@ -44,5 +44,43 @@
             ],
             "contour_area": 879.0
         }
+    ],
+    "bulbs": [
+        {
+            "id": 1,
+            "confidence": 1.0249,
+            "label": "bulb",
+            "bbox": [
+                413,
+                190,
+                503,
+                258
+            ],
+            "contour_area": 3670.0
+        },
+        {
+            "id": 2,
+            "confidence": 0.7746,
+            "label": "bulb",
+            "bbox": [
+                1204,
+                983,
+                1265,
+                1022
+            ],
+            "contour_area": 1343.5
+        },
+        {
+            "id": 3,
+            "confidence": 1.0147,
+            "label": "bulb",
+            "bbox": [
+                668,
+                578,
+                726,
+                610
+            ],
+            "contour_area": 879.0
+        }
     ]
 }

@@ -10,7 +10,7 @@
             "bbox": [
                 1757.31,
                 409.67,
-                2047.29,
+                2047,
                 858.51
             ],
             "centroid": [
@@ -18,23 +18,10 @@
                 634
             ],
             "confidence": 0.83
-        },
-        {
-            "label": "suitcase",
-            "bbox": [
-                1.76,
-                1.51,
-                1499.0,
-                295.26
-            ],
-            "centroid": [
-                750,
-                148
-            ],
-            "confidence": 0.49
         }
     ],
     "room_name": "shoes",
     "bulb_count": 0,
-    "bulb_detections": []
+    "bulb_detections": [],
+    "bulbs": []
 }
