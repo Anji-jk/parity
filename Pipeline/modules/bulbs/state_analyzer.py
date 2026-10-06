@@ -126,18 +126,7 @@ def halo_gradient(gray, contour):
 
 
 def blob_light_stats(image, gray, contour, white_thr=235):
-    """
-    Returns (core_frac, core_px, contrast, skin_frac)
-
-      core_frac : fraction of blob pixels whose MEDIAN channel >= white_thr.
-                  Median (not min) so warm/orange lights that clip R and G but
-                  sit at ~120-200 in B still count as "clipped".
-      core_px   : absolute number of such pixels. Lets small clipped cores
-                  survive even when the thresholded blob is mostly halo/flare.
-      contrast  : mean brightness inside blob minus mean of surrounding ring
-      skin_frac : fraction of the surrounding ring that is skin-coloured
-                  (soft signal only: warm brick/wood also falls in this range).
-    """
+    
     H, W = gray.shape[:2]
     x, y, bw, bh = cv2.boundingRect(contour)
 
@@ -203,19 +192,7 @@ def _nms_containment(cands, iou_thr=0.2, contain_thr=0.6):
 
 def detect_bulb_candidates(image, threshold_value=None, min_area=None, pad_pixels=15,
                            debug=False, rejected=None, max_candidates=40):
-    """
-    Finds potential active light sources.
-
-    Changes vs. original:
-      * Two masks are merged: the original gamma'd mask (A) plus a mask on the
-        raw gray (B), so bright-but-unclipped fixtures (pendant shades, diffuse
-        strips) still reach the classifier. B is skipped if threshold_value is
-        passed explicitly.
-      * core test uses the median channel and has an absolute-pixel escape.
-      * candidates carry `halo` and `skin_frac` for the downstream classifier.
-      * containment-aware NMS.
-      * `rejected` (list) collects {"draw_bbox", "reason"} for the debug overlay.
-    """
+    
     h, w = image.shape[:2]
     gray = get_luminosity(image)
     smooth = reduce_haziness(gray, gamma=2.0)
